@@ -1,0 +1,38 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+*.test
+*.out
+
+# Go
+go.work
+go.work.sum
+
+# Data and configs
+*.db
+*.db-shm
+*.db-wal
+*_config.json
+server_key.json
+
+# Demo data
+demo/data/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/

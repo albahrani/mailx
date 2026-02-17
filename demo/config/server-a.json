@@ -1,0 +1,9 @@
+{
+  "domain": "alice.local",
+  "grpcPort": "8443",
+  "httpPort": "8080",
+  "databasePath": "/data/mailx.db",
+  "serverKeyFile": "/data/server_key.json",
+  "maxMessageSize": 26214400,
+  "defaultQuota": 10737418240
+}
