@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package mailx.client.v1;
+
+option go_package = "github.com/albahrani/mailx/server/proto;proto";
+
+// Client service for user operations
+service ClientService {
+  // Account management
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  
+  // Message operations
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
+  
+  // Contact operations
+  rpc GetContactKey(GetContactKeyRequest) returns (GetContactKeyResponse);
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  bytes public_key = 3;  // Ed25519 public key
+}
+
+message RegisterResponse {
+  string user_id = 1;
+  bytes server_signature = 2;  // Server's signature over user identity
+  string message = 3;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;  // JWT token
+  int64 expires_at = 2;     // Unix timestamp
+  string message = 3;
+}
+
+message SendMessageRequest {
+  string access_token = 1;
+  repeated string recipients = 2;
+  bytes encrypted_message = 3;
+  MessageMetadata metadata = 4;
+}
+
+message SendMessageResponse {
+  string message_id = 1;
+  int64 timestamp = 2;
+  repeated DeliveryStatus delivery_statuses = 3;
+}
+
+message DeliveryStatus {
+  string recipient = 1;
+  enum Status {
+    PENDING = 0;
+    DELIVERED = 1;
+    FAILED = 2;
+  }
+  Status status = 2;
+  string error_message = 3;
+}
+
+message MessageMetadata {
+  int64 timestamp = 1;
+  int32 size = 2;
+  string subject = 3;
+}
+
+message ListMessagesRequest {
+  string access_token = 1;
+  string folder = 2;  // "inbox", "sent", "requests"
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListMessagesResponse {
+  repeated MessageSummary messages = 1;
+  int32 total_count = 2;
+}
+
+message MessageSummary {
+  string message_id = 1;
+  string sender = 2;
+  string subject = 3;
+  int64 timestamp = 4;
+  int32 size = 5;
+  bool read = 6;
+}
+
+message GetMessageRequest {
+  string access_token = 1;
+  string message_id = 2;
+}
+
+message GetMessageResponse {
+  string message_id = 1;
+  string sender = 2;
+  bytes encrypted_message = 3;
+  MessageMetadata metadata = 4;
+}
+
+message GetContactKeyRequest {
+  string access_token = 1;
+  string address = 2;  // alice@example.com
+}
+
+message GetContactKeyResponse {
+  string address = 1;
+  bytes public_key = 2;
+  bytes server_signature = 3;
+  int64 created_at = 4;
+}

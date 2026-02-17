@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Server A (alice.local)
+  server-a:
+    build:
+      context: ../server
+      dockerfile: ../demo/Dockerfile.server
+    container_name: mailx-server-a
+    hostname: server-a.local
+    networks:
+      mailx-net:
+        aliases:
+          - alice.local
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    volumes:
+      - ./config/server-a.json:/config.json:ro
+      - ./data/server-a:/data
+    command: ["/mailx-server", "/config.json"]
+
+  # Server B (bob.local)
+  server-b:
+    build:
+      context: ../server
+      dockerfile: ../demo/Dockerfile.server
+    container_name: mailx-server-b
+    hostname: server-b.local
+    networks:
+      mailx-net:
+        aliases:
+          - bob.local
+    ports:
+      - "8543:8443"
+      - "8180:8080"
+    volumes:
+      - ./config/server-b.json:/config.json:ro
+      - ./data/server-b:/data
+    command: ["/mailx-server", "/config.json"]
+
+  # Server C (carol.local)
+  server-c:
+    build:
+      context: ../server
+      dockerfile: ../demo/Dockerfile.server
+    container_name: mailx-server-c
+    hostname: server-c.local
+    networks:
+      mailx-net:
+        aliases:
+          - carol.local
+    ports:
+      - "8643:8443"
+      - "8280:8080"
+    volumes:
+      - ./config/server-c.json:/config.json:ro
+      - ./data/server-c:/data
+    command: ["/mailx-server", "/config.json"]
+
+  # Client for testing
+  client:
+    build:
+      context: ../client
+      dockerfile: ../demo/Dockerfile.client
+    container_name: mailx-client
+    networks:
+      - mailx-net
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data/client:/data
+    depends_on:
+      - server-a
+      - server-b
+      - server-c
+
+networks:
+  mailx-net:
+    driver: bridge

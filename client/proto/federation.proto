@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package mailx.federation.v1;
+
+option go_package = "github.com/albahrani/mailx/server/proto;proto";
+
+// Federation service for server-to-server communication
+service FederationService {
+  rpc DeliverMessage(DeliverMessageRequest) returns (DeliverMessageResponse);
+  rpc GetServerInfo(ServerInfoRequest) returns (ServerInfoResponse);
+  rpc GetUserKey(GetUserKeyRequest) returns (GetUserKeyResponse);
+}
+
+message DeliverMessageRequest {
+  string sender = 1;
+  string recipient = 2;
+  bytes encrypted_message = 3;
+  FederationMessageMetadata metadata = 4;
+  bytes sender_server_signature = 5;
+}
+
+message FederationMessageMetadata {
+  int64 timestamp = 1;
+  int32 size = 2;
+  string subject = 3;
+}
+
+message DeliverMessageResponse {
+  enum Status {
+    ACCEPTED = 0;
+    REJECTED_NO_SUCH_USER = 1;
+    REJECTED_QUOTA_EXCEEDED = 2;
+    REJECTED_RATE_LIMITED = 3;
+    REJECTED_BLOCKED = 4;
+  }
+  Status status = 1;
+  string message_id = 2;
+  int64 timestamp = 3;
+  string error_message = 4;
+}
+
+message ServerInfoRequest {
+  string domain = 1;
+}
+
+message ServerInfoResponse {
+  string domain = 1;
+  bytes public_key = 2;
+  string version = 3;
+  ServerCapabilities capabilities = 4;
+}
+
+message ServerCapabilities {
+  bool supports_e2ee = 1;
+  int32 max_message_size = 2;
+}
+
+message GetUserKeyRequest {
+  string address = 1;  // alice@example.com
+}
+
+message GetUserKeyResponse {
+  string address = 1;
+  bytes public_key = 2;
+  bytes server_signature = 3;
+  int64 created_at = 4;
+}
