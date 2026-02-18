@@ -5,6 +5,8 @@
 *.so
 *.dylib
 bin/
+server/bin/
+client/bin/
 *.test
 *.out
 
@@ -21,6 +23,10 @@ server_key.json
 
 # Demo data
 demo/data/
+
+# Demo TLS artifacts
+demo/config/tls.crt
+demo/config/tls.key
 
 # IDEs
 .idea/

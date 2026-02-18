@@ -2,58 +2,62 @@
 
 # Build verification script for MailX
 
-set -e
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=== MailX Build Verification ==="
-echo ""
+echo
 
 # Check Go version
 echo "1. Checking Go installation..."
 if ! command -v go &> /dev/null; then
-    echo "   ❌ Go is not installed"
+    echo "   [FAIL] Go is not installed"
     exit 1
 fi
 GO_VERSION=$(go version)
-echo "   ✅ $GO_VERSION"
+echo "   [OK] $GO_VERSION"
 
 # Check protoc
 echo ""
 echo "2. Checking Protocol Buffers compiler..."
 if ! command -v protoc &> /dev/null; then
-    echo "   ⚠️  protoc not found (optional for building, required for modifying .proto files)"
+    echo "   [WARN] protoc not found (optional for building, required for modifying .proto files)"
 else
     PROTOC_VERSION=$(protoc --version)
-    echo "   ✅ $PROTOC_VERSION"
+    echo "   [OK] $PROTOC_VERSION"
 fi
 
 # Build server
 echo ""
 echo "3. Building server..."
-cd /home/runner/work/mailx/mailx/server
+cd "$ROOT/server"
+mkdir -p bin
 if go build -o bin/mailx-server cmd/server/main.go 2>&1; then
     SIZE=$(ls -lh bin/mailx-server | awk '{print $5}')
-    echo "   ✅ Server built successfully ($SIZE)"
+    echo "   [OK] Server built successfully ($SIZE)"
 else
-    echo "   ❌ Server build failed"
+    echo "   [FAIL] Server build failed"
     exit 1
 fi
 
 # Build client
 echo ""
 echo "4. Building client..."
-cd /home/runner/work/mailx/mailx/client
+cd "$ROOT/client"
+mkdir -p bin
 if go build -o bin/mailx-client cmd/client/main.go 2>&1; then
     SIZE=$(ls -lh bin/mailx-client | awk '{print $5}')
-    echo "   ✅ Client built successfully ($SIZE)"
+    echo "   [OK] Client built successfully ($SIZE)"
 else
-    echo "   ❌ Client build failed"
+    echo "   [FAIL] Client build failed"
     exit 1
 fi
 
 # Test server startup
 echo ""
 echo "5. Testing server startup..."
-cd /home/runner/work/mailx/mailx/server
+cd "$ROOT/server"
 
 # Create test config
 cat > /tmp/verify-test-config.json <<EOF
@@ -73,9 +77,9 @@ SERVER_PID=$!
 sleep 2
 
 if curl -s -f http://localhost:28080/.well-known/mailx-server > /dev/null 2>&1; then
-    echo "   ✅ Server started and responding"
+    echo "   [OK] Server started and responding"
 else
-    echo "   ❌ Server not responding"
+    echo "   [FAIL] Server not responding"
     cat /tmp/verify-test.log
     exit 1
 fi
@@ -86,20 +90,20 @@ rm -f /tmp/verify-test* 2>/dev/null || true
 echo ""
 echo "6. Checking documentation..."
 DOCS=(
-    "/home/runner/work/mailx/mailx/docs/PRD_Server.md"
-    "/home/runner/work/mailx/mailx/docs/PRD_Client.md"
-    "/home/runner/work/mailx/mailx/docs/Architecture.md"
-    "/home/runner/work/mailx/mailx/docs/ThreatModel.md"
-    "/home/runner/work/mailx/mailx/docs/Protocol.md"
-    "/home/runner/work/mailx/mailx/docs/Roadmap.md"
+    "$ROOT/docs/PRD_Server.md"
+    "$ROOT/docs/PRD_Client.md"
+    "$ROOT/docs/Architecture.md"
+    "$ROOT/docs/ThreatModel.md"
+    "$ROOT/docs/Protocol.md"
+    "$ROOT/docs/Roadmap.md"
 )
 
 ALL_DOCS_OK=true
 for doc in "${DOCS[@]}"; do
     if [ -f "$doc" ]; then
-        echo "   ✅ $(basename $doc)"
+        echo "   [OK] $(basename "$doc")"
     else
-        echo "   ❌ $(basename $doc) missing"
+        echo "   [FAIL] $(basename "$doc") missing"
         ALL_DOCS_OK=false
     fi
 done
@@ -110,30 +114,30 @@ fi
 
 echo ""
 echo "7. Checking demo setup..."
-if [ -f "/home/runner/work/mailx/mailx/demo/docker-compose.yml" ]; then
-    echo "   ✅ Docker Compose configuration"
+if [ -f "$ROOT/demo/docker-compose.yml" ]; then
+    echo "   [OK] Docker Compose configuration"
 else
-    echo "   ❌ Docker Compose configuration missing"
+    echo "   [FAIL] Docker Compose configuration missing"
     exit 1
 fi
 
-if [ -f "/home/runner/work/mailx/mailx/demo/setup.sh" ] && [ -x "/home/runner/work/mailx/mailx/demo/setup.sh" ]; then
-    echo "   ✅ Demo setup script"
+if [ -f "$ROOT/demo/setup.sh" ] && [ -x "$ROOT/demo/setup.sh" ]; then
+    echo "   [OK] Demo setup script"
 else
-    echo "   ❌ Demo setup script missing or not executable"
+    echo "   [FAIL] Demo setup script missing or not executable"
     exit 1
 fi
 
 echo ""
 echo "=== Build Verification Summary ==="
-echo "✅ Go toolchain working"
-echo "✅ Server builds and starts correctly"
-echo "✅ Client builds successfully"
-echo "✅ All documentation present"
-echo "✅ Demo environment configured"
-echo ""
-echo "🎉 MailX is ready to use!"
-echo ""
+echo "[OK] Go toolchain working"
+echo "[OK] Server builds and starts correctly"
+echo "[OK] Client builds successfully"
+echo "[OK] All documentation present"
+echo "[OK] Demo environment configured"
+echo
+echo "MailX is ready to use."
+echo
 echo "Next steps:"
 echo "  - Run the demo: cd demo && ./setup.sh"
 echo "  - Read the docs: see docs/ directory"

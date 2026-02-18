@@ -26,6 +26,21 @@ rm -rf data/server-* data/client 2>/dev/null || true
 mkdir -p data/server-a data/server-b data/server-c data/client
 
 echo ""
+echo "1b. Ensuring demo TLS certificate exists..."
+if [ ! -f "config/tls.crt" ] || [ ! -f "config/tls.key" ]; then
+    if command -v openssl &> /dev/null; then
+        echo "Generating self-signed TLS cert (config/tls.crt, config/tls.key)"
+        MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+            -keyout config/tls.key -out config/tls.crt \
+            -subj "/CN=mailx-demo" \
+            -addext "subjectAltName=DNS:server-a.local,DNS:server-b.local,DNS:server-c.local,DNS:alice.local,DNS:bob.local,DNS:carol.local,DNS:localhost,IP:127.0.0.1" \
+            >/dev/null 2>&1 || true
+    else
+        echo "Warning: openssl not found; demo will run without TLS"
+    fi
+fi
+
+echo ""
 echo "2. Building Docker images..."
 $DOCKER_COMPOSE build
 
@@ -55,7 +70,7 @@ echo "To run the demo:"
 echo "  ./run_demo.sh"
 echo ""
 echo "To access interactive client:"
-echo "  $DOCKER_COMPOSE run --rm client /mailx-client"
+echo "  $DOCKER_COMPOSE run --rm client alice_config.json"
 echo ""
 echo "To stop servers:"
 echo "  $DOCKER_COMPOSE down"

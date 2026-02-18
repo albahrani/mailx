@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Storage handles database operations
@@ -27,28 +27,28 @@ type User struct {
 
 // Message represents a stored message
 type Message struct {
-	ID               string
-	RecipientUserID  string
-	SenderAddress    string
-	EncryptedBlob    []byte
-	Subject          string
-	Timestamp        time.Time
-	Size             int32
-	Read             bool
-	Folder           string // inbox, sent, requests
+	ID              string
+	RecipientUserID string
+	SenderAddress   string
+	EncryptedBlob   []byte
+	Subject         string
+	Timestamp       time.Time
+	Size            int32
+	Read            bool
+	Folder          string // inbox, sent, requests
 }
 
 // Contact represents a contact entry
 type Contact struct {
-	UserID       string
-	Address      string
-	TrustLevel   string // unknown, accepted, blocked
-	FirstSeen    time.Time
+	UserID     string
+	Address    string
+	TrustLevel string // unknown, accepted, blocked
+	FirstSeen  time.Time
 }
 
 // New creates a new Storage instance
 func New(dbPath string) (*Storage, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -276,4 +276,18 @@ func (s *Storage) GetContact(userID, address string) (*Contact, error) {
 		return nil, fmt.Errorf("failed to get contact: %w", err)
 	}
 	return &contact, nil
+}
+
+// MoveMessages moves all messages for a user+sender from one folder to another.
+func (s *Storage) MoveMessages(userID, sender, fromFolder, toFolder string) error {
+	query := `
+		UPDATE messages
+		SET folder = ?
+		WHERE recipient_user_id = ? AND sender_address = ? AND folder = ?
+	`
+	_, err := s.db.Exec(query, toFolder, userID, sender, fromFolder)
+	if err != nil {
+		return fmt.Errorf("failed to move messages: %w", err)
+	}
+	return nil
 }

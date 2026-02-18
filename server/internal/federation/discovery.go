@@ -2,6 +2,7 @@ package federation
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,11 +13,11 @@ import (
 
 // ServerInfo contains information about a remote server
 type ServerInfo struct {
-	Domain     string
-	PublicKey  []byte
-	Endpoint   string
-	CachedAt   time.Time
-	TTL        time.Duration
+	Domain    string
+	PublicKey []byte
+	Endpoint  string
+	CachedAt  time.Time
+	TTL       time.Duration
 }
 
 // Discovery handles server discovery
@@ -30,6 +31,7 @@ type WellKnownResponse struct {
 	Version   string `json:"version"`
 	Domain    string `json:"domain"`
 	PublicKey string `json:"publicKey"`
+	SignKey   string `json:"signKey"`
 	Endpoints struct {
 		GRPC string `json:"grpc"`
 	} `json:"endpoints"`
@@ -71,35 +73,59 @@ func (d *Discovery) DiscoverServer(ctx context.Context, domain string) (*ServerI
 
 // fetchWellKnown fetches server info from /.well-known/mailx-server
 func (d *Discovery) fetchWellKnown(ctx context.Context, domain string) (*ServerInfo, error) {
-	url := fmt.Sprintf("https://%s/.well-known/mailx-server", domain)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+	urls := []string{
+		fmt.Sprintf("https://%s/.well-known/mailx-server", domain),
+		fmt.Sprintf("http://%s/.well-known/mailx-server", domain),
+		fmt.Sprintf("http://%s:8080/.well-known/mailx-server", domain),
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
+	client := &http.Client{Timeout: 10 * time.Second}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch well-known: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("well-known returned status %d", resp.StatusCode)
-	}
-
+	var lastErr error
 	var wellKnown WellKnownResponse
-	if err := json.NewDecoder(resp.Body).Decode(&wellKnown); err != nil {
-		return nil, fmt.Errorf("failed to decode well-known: %w", err)
+	for _, url := range urls {
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			lastErr = fmt.Errorf("failed to create request: %w", err)
+			continue
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("failed to fetch well-known: %w", err)
+			continue
+		}
+
+		func() {
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				lastErr = fmt.Errorf("well-known returned status %d", resp.StatusCode)
+				return
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&wellKnown); err != nil {
+				lastErr = fmt.Errorf("failed to decode well-known: %w", err)
+				return
+			}
+			lastErr = nil
+		}()
+
+		if lastErr == nil {
+			break
+		}
+	}
+	if lastErr != nil {
+		return nil, lastErr
 	}
 
-	// Decode the public key from base64
-	// For demo purposes, we'll store it as-is
-	publicKey := []byte(wellKnown.PublicKey)
+	// Decode the signing public key from base64.
+	// We require signKey to avoid ambiguity with the encryption public key.
+	if wellKnown.SignKey == "" {
+		return nil, fmt.Errorf("well-known missing signKey")
+	}
+	publicKey, err := base64.StdEncoding.DecodeString(wellKnown.SignKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode signing public key: %w", err)
+	}
 
 	return &ServerInfo{
 		Domain:    wellKnown.Domain,

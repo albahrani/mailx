@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,20 +23,30 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
+func (s *Server) federationTransportCreds() credentials.TransportCredentials {
+	// Demo behavior: if this server is configured with TLS, assume peers are too.
+	// We intentionally skip verification for the demo's self-signed cert.
+	if s.config.TLSCertFile != "" && s.config.TLSKeyFile != "" {
+		return credentials.NewTLS(&tls.Config{InsecureSkipVerify: true, NextProtos: []string{"h2"}})
+	}
+	return insecure.NewCredentials()
+}
+
 // Config holds server configuration
 type Config struct {
-	Domain          string `json:"domain"`
-	GRPCPort        string `json:"grpcPort"`
-	HTTPPort        string `json:"httpPort"`
-	DatabasePath    string `json:"databasePath"`
-	TLSCertFile     string `json:"tlsCertFile"`
-	TLSKeyFile      string `json:"tlsKeyFile"`
-	ServerKeyFile   string `json:"serverKeyFile"`
-	MaxMessageSize  int32  `json:"maxMessageSize"`
-	DefaultQuota    int64  `json:"defaultQuota"`
+	Domain         string `json:"domain"`
+	GRPCPort       string `json:"grpcPort"`
+	HTTPPort       string `json:"httpPort"`
+	DatabasePath   string `json:"databasePath"`
+	TLSCertFile    string `json:"tlsCertFile"`
+	TLSKeyFile     string `json:"tlsKeyFile"`
+	ServerKeyFile  string `json:"serverKeyFile"`
+	MaxMessageSize int32  `json:"maxMessageSize"`
+	DefaultQuota   int64  `json:"defaultQuota"`
 }
 
 // Server represents the MailX server
@@ -42,6 +54,7 @@ type Server struct {
 	config    *Config
 	storage   *storage.Storage
 	serverKey *crypto.KeyPair
+	signKey   *crypto.SigningKeyPair
 	discovery *federation.Discovery
 	pb.UnimplementedClientServiceServer
 	pb.UnimplementedFederationServiceServer
@@ -61,12 +74,64 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to load server key: %w", err)
 	}
 
+	// Load or generate server signing key
+	signKey, err := loadOrGenerateServerSigningKey(config.ServerKeyFile + ".signing.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load server signing key: %w", err)
+	}
+
 	return &Server{
 		config:    config,
 		storage:   store,
 		serverKey: serverKey,
+		signKey:   signKey,
 		discovery: federation.NewDiscovery(),
 	}, nil
+}
+
+func loadOrGenerateServerSigningKey(keyFile string) (*crypto.SigningKeyPair, error) {
+	data, err := os.ReadFile(keyFile)
+	if err == nil {
+		var keyData struct {
+			PublicKey  string `json:"publicKey"`
+			PrivateKey string `json:"privateKey"`
+		}
+		if err := json.Unmarshal(data, &keyData); err == nil {
+			privKey, err := base64.StdEncoding.DecodeString(keyData.PrivateKey)
+			if err == nil && len(privKey) == crypto.SigningPrivateKeySize {
+				pubKey, err := base64.StdEncoding.DecodeString(keyData.PublicKey)
+				if err == nil && len(pubKey) == crypto.SigningPublicKeySize {
+					return &crypto.SigningKeyPair{PublicKey: pubKey, PrivateKey: privKey}, nil
+				}
+			}
+		}
+	}
+
+	log.Println("Generating new server signing key pair...")
+	kp, err := crypto.GenerateSigningKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
+	keyData := struct {
+		PublicKey  string `json:"publicKey"`
+		PrivateKey string `json:"privateKey"`
+	}{
+		PublicKey:  base64.StdEncoding.EncodeToString(kp.PublicKey),
+		PrivateKey: base64.StdEncoding.EncodeToString(kp.PrivateKey),
+	}
+
+	data, err = json.MarshalIndent(keyData, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := os.WriteFile(keyFile, data, 0600); err != nil {
+		return nil, err
+	}
+
+	log.Printf("Server signing key saved to %s\n", keyFile)
+	return kp, nil
 }
 
 // loadOrGenerateServerKey loads the server key from file or generates a new one
@@ -141,9 +206,11 @@ func (s *Server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	userID := uuid.New().String()
 	passwordHash := crypto.HashPassword(req.Password)
 
-	// Sign the user's public key
-	attestationData := []byte(fmt.Sprintf("%s@%s%s", req.Username, s.config.Domain, req.PublicKey))
-	serverSignature := s.serverKey.Sign(attestationData)
+	// Sign the user's public key (attestation)
+	address := federation.FormatAddress(req.Username, s.config.Domain)
+	createdAt := time.Now()
+	attestationData := federation.KeyAttestationPayload(address, req.PublicKey, createdAt.Unix())
+	serverSignature := s.signKey.Sign(attestationData)
 
 	user := &storage.User{
 		ID:              userID,
@@ -152,7 +219,7 @@ func (s *Server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 		PasswordHash:    passwordHash,
 		PublicKey:       req.PublicKey,
 		ServerSignature: serverSignature,
-		CreatedAt:       time.Now(),
+		CreatedAt:       createdAt,
 		QuotaBytes:      s.config.DefaultQuota,
 	}
 
@@ -237,12 +304,67 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 				})
 			}
 		} else {
-			// Remote delivery (simplified for demo)
-			deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
-				Recipient: recipient,
-				Status:    pb.DeliveryStatus_PENDING,
-				ErrorMessage: "Remote delivery not yet implemented in demo",
+			// Remote delivery (demo): discover recipient server and forward via federation gRPC.
+			ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
+
+			info, err := s.discovery.DiscoverServer(ctx2, recipientDomain)
+			if err != nil {
+				cancel()
+				deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
+					Recipient:    recipient,
+					Status:       pb.DeliveryStatus_FAILED,
+					ErrorMessage: fmt.Sprintf("server discovery failed: %v", err),
+				})
+				continue
+			}
+
+			conn, err := grpc.NewClient(info.Endpoint, grpc.WithTransportCredentials(s.federationTransportCreds()))
+			if err != nil {
+				cancel()
+				deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
+					Recipient:    recipient,
+					Status:       pb.DeliveryStatus_FAILED,
+					ErrorMessage: fmt.Sprintf("failed to connect to remote server: %v", err),
+				})
+				continue
+			}
+			fClient := pb.NewFederationServiceClient(conn)
+			fResp, err := fClient.DeliverMessage(ctx2, &pb.DeliverMessageRequest{
+				Sender:           senderAddress,
+				Recipient:        recipient,
+				EncryptedMessage: req.EncryptedMessage,
+				Metadata: &pb.FederationMessageMetadata{
+					Timestamp: req.Metadata.Timestamp,
+					Size:      req.Metadata.Size,
+					Subject:   req.Metadata.Subject,
+				},
+				SenderServerSignature: nil,
 			})
+			conn.Close()
+			cancel()
+
+			if err != nil {
+				deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
+					Recipient:    recipient,
+					Status:       pb.DeliveryStatus_FAILED,
+					ErrorMessage: fmt.Sprintf("remote delivery failed: %v", err),
+				})
+				continue
+			}
+
+			switch fResp.Status {
+			case pb.DeliverMessageResponse_ACCEPTED:
+				deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
+					Recipient: recipient,
+					Status:    pb.DeliveryStatus_DELIVERED,
+				})
+			default:
+				deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{
+					Recipient:    recipient,
+					Status:       pb.DeliveryStatus_FAILED,
+					ErrorMessage: fResp.ErrorMessage,
+				})
+			}
 		}
 	}
 
@@ -261,8 +383,8 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 	s.storage.CreateMessage(sentMsg)
 
 	return &pb.SendMessageResponse{
-		MessageId:         messageID,
-		Timestamp:         timestamp.Unix(),
+		MessageId:        messageID,
+		Timestamp:        timestamp.Unix(),
 		DeliveryStatuses: deliveryStatuses,
 	}, nil
 }
@@ -377,21 +499,92 @@ func (s *Server) GetContactKey(ctx context.Context, req *pb.GetContactKeyRequest
 		return nil, status.Error(codes.InvalidArgument, "invalid address")
 	}
 
-	if domain != s.config.Domain {
-		return nil, status.Error(codes.InvalidArgument, "can only get keys for local users")
+	if domain == s.config.Domain {
+		user, err := s.storage.GetUser(username, domain)
+		if err != nil {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+
+		// Sanity check our own stored signature before returning it.
+		payload := federation.KeyAttestationPayload(req.Address, user.PublicKey, user.CreatedAt.Unix())
+		if !crypto.VerifySignature(s.signKey.PublicKey, payload, user.ServerSignature) {
+			return nil, status.Error(codes.Internal, "invalid server signature for user key")
+		}
+
+		return &pb.GetContactKeyResponse{
+			Address:         req.Address,
+			PublicKey:       user.PublicKey,
+			ServerSignature: user.ServerSignature,
+			CreatedAt:       user.CreatedAt.Unix(),
+		}, nil
 	}
 
-	user, err := s.storage.GetUser(username, domain)
+	// Remote lookup (demo): discover recipient server and fetch key via federation.
+	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
+
+	info, err := s.discovery.DiscoverServer(ctx2, domain)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "user not found")
+		cancel()
+		return nil, status.Errorf(codes.Unavailable, "server discovery failed: %v", err)
+	}
+
+	conn, err := grpc.NewClient(info.Endpoint, grpc.WithTransportCredentials(s.federationTransportCreds()))
+	if err != nil {
+		cancel()
+		return nil, status.Errorf(codes.Unavailable, "failed to connect to remote server: %v", err)
+	}
+	defer conn.Close()
+
+	fClient := pb.NewFederationServiceClient(conn)
+	fResp, err := fClient.GetUserKey(ctx2, &pb.GetUserKeyRequest{Address: req.Address})
+	cancel()
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "remote key lookup failed: %v", err)
+	}
+
+	// Verify remote server's signature over the key it returned.
+	payload := federation.KeyAttestationPayload(fResp.Address, fResp.PublicKey, fResp.CreatedAt)
+	if info.PublicKey == nil || !crypto.VerifySignature(info.PublicKey, payload, fResp.ServerSignature) {
+		return nil, status.Error(codes.Unavailable, "remote key attestation verification failed")
 	}
 
 	return &pb.GetContactKeyResponse{
-		Address:         req.Address,
-		PublicKey:       user.PublicKey,
-		ServerSignature: user.ServerSignature,
-		CreatedAt:       user.CreatedAt.Unix(),
+		Address:         fResp.Address,
+		PublicKey:       fResp.PublicKey,
+		ServerSignature: fResp.ServerSignature,
+		CreatedAt:       fResp.CreatedAt,
 	}, nil
+}
+
+// AcceptContact promotes a contact from "unknown" to "accepted".
+func (s *Server) AcceptContact(ctx context.Context, req *pb.AcceptContactRequest) (*pb.AcceptContactResponse, error) {
+	userID, err := s.validateToken(req.AccessToken)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+	if strings.TrimSpace(req.Address) == "" {
+		return nil, status.Error(codes.InvalidArgument, "address required")
+	}
+	if _, _, err := federation.ParseAddress(req.Address); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid address")
+	}
+
+	// Upsert contact as accepted.
+	if err := s.storage.UpsertContact(&storage.Contact{
+		UserID:     userID,
+		Address:    req.Address,
+		TrustLevel: "accepted",
+		FirstSeen:  time.Now(),
+	}); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to accept contact: %v", err)
+	}
+
+	// Move existing first-contact messages from requests -> inbox.
+	if err := s.storage.MoveMessages(userID, req.Address, "requests", "inbox"); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to move messages to inbox: %v", err)
+	}
+
+	return &pb.AcceptContactResponse{Message: "contact accepted"}, nil
 }
 
 // GetUserKey implements the federation GetUserKey RPC
@@ -425,8 +618,8 @@ func (s *Server) GetServerInfo(ctx context.Context, req *pb.ServerInfoRequest) (
 		PublicKey: s.serverKey.PublicKey,
 		Version:   "1.0",
 		Capabilities: &pb.ServerCapabilities{
-			SupportsE2Ee:     true,
-			MaxMessageSize:   s.config.MaxMessageSize,
+			SupportsE2Ee:   true,
+			MaxMessageSize: s.config.MaxMessageSize,
 		},
 	}, nil
 }
@@ -480,10 +673,13 @@ func (s *Server) validateToken(token string) (string, error) {
 	// Simple token format: userID:timestamp
 	// In production, use proper JWT
 	parts := string(decoded)
-	var userID string
+	sep := strings.LastIndexByte(parts, ':')
+	if sep <= 0 || sep >= len(parts)-1 {
+		return "", fmt.Errorf("invalid token format")
+	}
+	userID := parts[:sep]
 	var timestamp int64
-	_, err = fmt.Sscanf(parts, "%s:%d", &userID, &timestamp)
-	if err != nil {
+	if _, err := fmt.Sscanf(parts[sep+1:], "%d", &timestamp); err != nil {
 		return "", fmt.Errorf("invalid token format")
 	}
 
@@ -498,9 +694,10 @@ func (s *Server) validateToken(token string) (string, error) {
 // serveWellKnown serves the .well-known endpoint
 func (s *Server) serveWellKnown(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
-		"version":  "1.0",
-		"domain":   s.config.Domain,
+		"version":   "1.0",
+		"domain":    s.config.Domain,
 		"publicKey": base64.StdEncoding.EncodeToString(s.serverKey.PublicKey),
+		"signKey":   base64.StdEncoding.EncodeToString(s.signKey.PublicKey),
 		"endpoints": map[string]string{
 			"grpc": fmt.Sprintf("%s:%s", s.config.Domain, s.config.GRPCPort),
 		},
@@ -548,7 +745,8 @@ func (s *Server) Run() error {
 
 	log.Printf("Starting gRPC server on :%s\n", s.config.GRPCPort)
 	log.Printf("Domain: %s\n", s.config.Domain)
-	log.Printf("Server public key: %s\n", base64.StdEncoding.EncodeToString(s.serverKey.PublicKey))
+	log.Printf("Server encryption public key: %s\n", base64.StdEncoding.EncodeToString(s.serverKey.PublicKey))
+	log.Printf("Server signing public key: %s\n", base64.StdEncoding.EncodeToString(s.signKey.PublicKey))
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)

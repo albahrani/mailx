@@ -3,7 +3,9 @@
 # Simple integration test for MailX
 # This tests the basic workflow without Docker
 
-set -e
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "=== MailX Integration Test ==="
 echo ""
@@ -44,7 +46,7 @@ cat > /tmp/test-server-2.json <<EOF
 EOF
 
 echo "1. Starting test servers..."
-cd /home/runner/work/mailx/mailx/server
+cd "$ROOT/server"
 ./bin/mailx-server /tmp/test-server-1.json > /tmp/server1.log 2>&1 &
 SERVER_PID1=$!
 ./bin/mailx-server /tmp/test-server-2.json > /tmp/server2.log 2>&1 &
