@@ -11,6 +11,7 @@ Links:
 - Try it now: `QUICKSTART.md`
 - Demo walkthrough: `demo/README.md`
 - Docs hub: `docs/index.md`
+- Project website: `https://albahrani.github.io/mailx/`
 
 ## Why MailX
 

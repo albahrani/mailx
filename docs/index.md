@@ -16,7 +16,7 @@ hero: true
   <div class="actions">
     <a class="btn btnPrimary" href="https://github.com/albahrani/mailx">View on GitHub</a>
     <a class="btn" href="overview/">Read the overview</a>
-    <a class="btn" href="https://github.com/albahrani/mailx/blob/main/QUICKSTART.md">Try the demo</a>
+    <a class="btn" href="try/">Try the demo</a>
   </div>
 </div>
 
@@ -35,9 +35,23 @@ hero: true
   </div>
 </div>
 
+## What You'll See
+
+MailX is intentionally boring in the best way: it focuses on the everyday experience.
+
+<div class="panel">
+  <p class="cardTitle">A simple flow</p>
+  <p class="cardText">New sender -> Requests. One explicit accept -> Inbox. Messages stay end-to-end encrypted.</p>
+  <pre><code class="language-text">alice&gt; send bob@bob.local "Hello" "Want to try MailX?"
+bob&gt; list requests
+bob&gt; accept alice@alice.local
+bob&gt; list inbox</code></pre>
+</div>
+
 ## Start Here
 
 - Overview (non-technical): `overview.md`
+- Try the demo: `try.md`
 - Quick start: `https://github.com/albahrani/mailx/blob/main/QUICKSTART.md`
 - Demo walkthrough: `https://github.com/albahrani/mailx/blob/main/demo/README.md`
 
