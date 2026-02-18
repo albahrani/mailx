@@ -47,11 +47,23 @@ type Server struct {
 	signKey   *crypto.SigningKeyPair
 	discovery *federation.Discovery
 
+	// discoveryOverride allows tests to bypass HTTP discovery.
+	discoveryOverride map[string]*federation.ServerInfo
+
 	// Federation dialing hook for tests.
 	federationDial func(ctx context.Context, endpoint string, creds credentials.TransportCredentials) (*grpc.ClientConn, error)
 
 	pb.UnimplementedClientServiceServer
 	pb.UnimplementedFederationServiceServer
+}
+
+func (s *Server) discoverServer(ctx context.Context, domain string) (*federation.ServerInfo, error) {
+	if s.discoveryOverride != nil {
+		if info, ok := s.discoveryOverride[domain]; ok {
+			return info, nil
+		}
+	}
+	return s.discovery.DiscoverServer(ctx, domain)
 }
 
 // SigningPublicKey returns the server's Ed25519 signing public key used for
@@ -222,7 +234,7 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 
 		// Remote delivery (demo): discover recipient server and forward via federation gRPC.
 		ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
-		info, err := s.discovery.DiscoverServer(ctx2, recipientDomain)
+		info, err := s.discoverServer(ctx2, recipientDomain)
 		if err != nil {
 			cancel()
 			deliveryStatuses = append(deliveryStatuses, &pb.DeliveryStatus{Recipient: recipient, Status: pb.DeliveryStatus_FAILED, ErrorMessage: fmt.Sprintf("server discovery failed: %v", err)})
@@ -385,7 +397,7 @@ func (s *Server) GetContactKey(ctx context.Context, req *pb.GetContactKeyRequest
 	}
 
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
-	info, err := s.discovery.DiscoverServer(ctx2, domain)
+	info, err := s.discoverServer(ctx2, domain)
 	if err != nil {
 		cancel()
 		return nil, status.Errorf(codes.Unavailable, "server discovery failed: %v", err)
