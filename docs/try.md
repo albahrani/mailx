@@ -29,5 +29,5 @@ cd demo
 
 Next:
 
-- Step-by-step walkthrough: `https://github.com/albahrani/mailx/blob/main/demo/README.md`
-- Super short quickstart: `https://github.com/albahrani/mailx/blob/main/QUICKSTART.md`
+- Step-by-step walkthrough: [demo/README.md](https://github.com/albahrani/mailx/blob/main/demo/README.md)
+- Super short quickstart: [QUICKSTART.md](https://github.com/albahrani/mailx/blob/main/QUICKSTART.md)

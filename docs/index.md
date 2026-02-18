@@ -9,7 +9,7 @@ hero: true
 <div class="panel hero">
   <div class="kicker">Demo/reference implementation</div>
   
-  # Email, made simple and secure.
+  <h1>Email, made simple and secure.</h1>
 
   <p class="lede">MailX is a federated email replacement built around a simple belief: private messages should stay private. End-to-end encryption is the default. First-time senders do not land straight in your inbox. And you can run your own server.</p>
 
@@ -50,17 +50,17 @@ bob&gt; list inbox</code></pre>
 
 ## Start Here
 
-- Overview (non-technical): `overview.md`
-- Try the demo: `try.md`
-- Quick start: `https://github.com/albahrani/mailx/blob/main/QUICKSTART.md`
-- Demo walkthrough: `https://github.com/albahrani/mailx/blob/main/demo/README.md`
+- Overview (non-technical): [Overview](overview/)
+- Try the demo: [Try](try/)
+- Quick start: [QUICKSTART.md](https://github.com/albahrani/mailx/blob/main/QUICKSTART.md)
+- Demo walkthrough: [demo/README.md](https://github.com/albahrani/mailx/blob/main/demo/README.md)
 
 ## Deep Dives
 
-- `Architecture.md`
-- `Protocol.md`
-- `ThreatModel.md`
-- `Roadmap.md`
+- [Architecture]({{ "/Architecture/" | relative_url }})
+- [Protocol]({{ "/Protocol/" | relative_url }})
+- [Threat Model]({{ "/ThreatModel/" | relative_url }})
+- [Roadmap]({{ "/Roadmap/" | relative_url }})
 
 ## Safety Note
 

@@ -34,11 +34,11 @@ MailX is currently a demo/reference implementation.
 
 If you want the technical details, head to:
 
-- `docs/Architecture.md`
-- `docs/Protocol.md`
-- `docs/ThreatModel.md`
+- [Architecture]({{ "/Architecture/" | relative_url }})
+- [Protocol]({{ "/Protocol/" | relative_url }})
+- [Threat Model]({{ "/ThreatModel/" | relative_url }})
 
 ## Next
 
-- Want to understand the system design? Read `Architecture.md`.
-- Want the wire-level details? Read `Protocol.md`.
+- Want to understand the system design? Read [Architecture]({{ "/Architecture/" | relative_url }}).
+- Want the wire-level details? Read [Protocol]({{ "/Protocol/" | relative_url }}).
