@@ -176,7 +176,7 @@ mailx/
 ### Cryptography
 - **Ed25519** for digital signatures (server signing keys for key attestations)
 - **NaCl box** (X25519 + XSalsa20-Poly1305) for E2EE
-- **BLAKE2b** for hashing
+- Hashing: not used by the reference implementation
 - **Go crypto libraries** (golang.org/x/crypto)
 
 ### Identity & Trust

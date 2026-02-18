@@ -275,8 +275,8 @@ This document analyzes the security threats facing the MailX system and describe
 
 **Mitigations:**
 - Use system CSPRNG
-- Constant-time crypto operations (libsodium)
-- Vetted crypto libraries (libsodium)
+- Constant-time crypto operations (NaCl / Go crypto)
+- Vetted crypto libraries
 - Protocol version negotiation with minimum versions
 - No custom crypto implementations
 
@@ -485,13 +485,13 @@ This document analyzes the security threats facing the MailX system and describe
 **We Assume:**
 1. Ed25519 provides 128-bit security (quantum: ~64-bit)
 2. XSalsa20-Poly1305 is secure for authenticated encryption
-3. BLAKE2b provides collision resistance
+3. Hash functions used by the reference implementation are assumed secure
 4. Discrete logarithm problem is hard (until quantum computers)
 5. Random number generators are cryptographically secure
 
 **If Assumptions Break:**
 - Algorithm compromise: Protocol supports version negotiation, can migrate to new algorithms
-- Implementation flaw: Use vetted libraries (libsodium), apply patches quickly
+- Implementation flaw: Use vetted crypto libraries, apply patches quickly
 - Quantum computers: Transition to post-quantum crypto (future work)
 
 ### 6.2 Infrastructure Assumptions
@@ -680,7 +680,7 @@ This document analyzes the security threats facing the MailX system and describe
 ## 10. Security Roadmap
 
 ### 10.1 Phase 1: Demo v0.1 (Current)
-- ✅ Basic E2EE with libsodium
+- ✅ Basic E2EE with NaCl box
 - ✅ TLS for client-server
 - ⚠️ Federation uses gRPC with optional TLS in demo (no mTLS)
 - ✅ Password authentication

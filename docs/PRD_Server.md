@@ -107,9 +107,9 @@ The MailX server is a federated messaging server designed to replace traditional
   - Better concurrent write performance
 
 ### 4.3 Message Storage
-- **Encrypted at Rest**: All message blobs encrypted with server key
-  - Additional layer beyond E2EE (defense in depth)
-  - Server key derived from configuration secret
+- **Encrypted at Rest**: Not implemented in the reference implementation
+  - Stored message blobs are E2EE-encrypted by clients; the server persists the encrypted blob as-is
+  - Production deployments may add server-side encryption at rest as defense in depth
 - **Retention Policy**: Configurable per-user or server-wide
   - Default: No automatic deletion
   - Support for auto-deletion after N days
@@ -125,7 +125,7 @@ The MailX server is a federated messaging server designed to replace traditional
 
 ### 5.2 Message Operations
 - **Receive**: Accept message from remote server
-  - Verify sender domain signature
+  - (Planned) Verify sender domain signature
   - Check recipient exists and has quota
   - Store encrypted blob
   - Update contact trust if needed
@@ -197,7 +197,7 @@ The MailX server is a federated messaging server designed to replace traditional
   - Refresh token mechanism
 
 ### 8.3 Data Protection
-- **Encryption at Rest**: Server-level encryption for database
+- **Encryption at Rest**: Planned (defense in depth)
 - **TLS Everywhere**: All network communication over TLS 1.3
 - **Key Security**: Domain keys stored in encrypted keystore
   - Derive encryption key from server secret

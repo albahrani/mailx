@@ -217,7 +217,7 @@ The MailX client provides a user interface for the secure email replacement syst
 ### 6.1 End-to-End Encryption
 - **Default E2EE**: All messages encrypted by default
   - No plaintext option
-- **Crypto Algorithm**: Use libsodium (NaCl)
+ - **Crypto Algorithm**: NaCl box (X25519 + XSalsa20-Poly1305) via Go `x/crypto/nacl/box`
   - Curve25519 for key exchange (if needed for groups)
   - Ed25519 for signatures
   - XSalsa20-Poly1305 for encryption

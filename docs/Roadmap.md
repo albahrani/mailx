@@ -30,12 +30,12 @@ Build a self-hostable, federated email replacement with end-to-end encryption by
   - ✅ Basic federation (well-known discovery; transport auth hardening planned)
   - ✅ Message routing (local and remote delivery)
   - ✅ Storage (SQLite with encrypted blobs)
-  - ✅ E2EE (NaCl box / libsodium)
+  - ✅ E2EE (NaCl box)
 - ✅ Client implementation (Go CLI)
   - ✅ Account creation
   - ✅ Key generation and management
   - ✅ Send and receive messages
-  - ✅ Basic crypto (encrypt/decrypt with libsodium)
+  - ✅ Basic crypto (encrypt/decrypt with NaCl box)
 - ✅ Demo setup
   - ✅ Docker Compose for 3 servers + client
   - ✅ Sample configuration
@@ -504,7 +504,7 @@ Build a self-hostable, federated email replacement with end-to-end encryption by
 ### Technical Risks
 
 **Risk:** Crypto implementation flaws
-**Mitigation:** Use vetted libraries (libsodium), security audits, bug bounty
+**Mitigation:** Use vetted crypto libraries, security audits, bug bounty
 
 **Risk:** Performance bottlenecks
 **Mitigation:** Early performance testing, optimization, horizontal scaling

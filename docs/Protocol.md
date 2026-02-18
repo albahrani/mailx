@@ -13,7 +13,7 @@ MailX is a federated messaging protocol designed to replace email with better se
 ```
 ┌────────────────────────────────┐
 │   Application Messages         │
-│   (E2EE with libsodium)       │
+│   (E2EE with NaCl box)        │
 ├────────────────────────────────┤
 │   gRPC Services                │
 │   (Protocol Buffers)           │
@@ -395,7 +395,7 @@ for each recipient:
 
 ### 7.3 Message Signing
 
-Not implemented in the reference implementation. Integrity in transit relies on transport security and AEAD integrity of NaCl box.
+The reference implementation does not implement sender-signed message envelopes. Integrity in transit relies on transport security plus the authenticated encryption provided by NaCl box.
 
 ### 7.5 Server Attestation
 
@@ -617,8 +617,8 @@ Graceful degradation if feature unavailable
 
 ### 12.1 Security Features (Current Reference Implementation)
 
-- ✅ E2EE using NaCl box
-- ✅ Server-signed key attestations verified by clients
+- ✅ E2EE using NaCl box (`x/crypto/nacl/box`)
+- ✅ Server-signed key attestations verified by clients (Ed25519)
 - ⚠️ Transport security varies by deployment (demo uses self-signed TLS for gRPC when configured; well-known is plain HTTP)
 - ⚠️ Password hashing is a placeholder
 - ⚠️ Access tokens are not JWT
@@ -705,7 +705,7 @@ Signature (base64):
 
 Implementations MUST:
 - Support protocol version 1.0
-- Implement E2EE with libsodium
+- Implement E2EE with NaCl box semantics
 - Use Ed25519 for signatures
 - Use TLS in production deployments
 - Validate key attestations (server-signed user key bindings)
@@ -733,7 +733,7 @@ Implementations MAY:
 
 **Cryptography:**
 - [NaCl](https://nacl.cr.yp.to/) - Networking and Cryptography library
-- [libsodium](https://doc.libsodium.org/) - NaCl fork with better portability
+- NaCl (original): https://nacl.cr.yp.to/
 - [RFC 8032](https://tools.ietf.org/html/rfc8032) - Ed25519 signature scheme
 
 **Protocols:**

@@ -32,7 +32,7 @@ Build and run from source:
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.24+
 - Protocol Buffers compiler
 - SQLite
 
@@ -244,6 +244,10 @@ For local server, check stdout.
 - Demo gRPC uses self-signed TLS when configured (client skips certificate verification)
 - Demo `/.well-known/mailx-server` is served over plain HTTP
 - No rate limiting enforced yet
+
+### Crypto note
+
+MailX uses Go's NaCl box implementation (`x/crypto/nacl/box`) for E2EE in the demo/reference implementation. There is no libsodium dependency.
 
 See [docs/ThreatModel.md](docs/ThreatModel.md) for complete security analysis.
 

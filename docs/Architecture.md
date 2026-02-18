@@ -236,11 +236,11 @@ message DeliverMessageRequest {
 
 ### 4.1 Cryptographic Primitives
 
-**Library**: libsodium (NaCl)
+**Library**: Go `x/crypto/nacl/box` (NaCl box)
 - **Key Exchange**: X25519 (Curve25519 ECDH)
 - **Signatures**: Ed25519
 - **Encryption**: XSalsa20-Poly1305 (authenticated encryption)
-- **Hashing**: BLAKE2b
+- **Hashing**: Not used by the reference implementation
 
 ### 4.2 Message Encryption
 
@@ -693,7 +693,7 @@ See section 4.2 for encryption details.
 ## 13. Standards and References
 
 **Cryptography:**
-- NaCl/libsodium: https://nacl.cr.yp.to/
+- NaCl: https://nacl.cr.yp.to/
 - Ed25519: RFC 8032
 - X25519: RFC 7748
 

@@ -6,7 +6,7 @@ A modern, secure, self-hostable alternative to email with end-to-end encryption 
 
 MailX is a federated messaging system designed to replace traditional email with better security and privacy. It features:
 
-- **End-to-end encryption by default** - All messages encrypted with NaCl/libsodium
+- **End-to-end encryption by default** - All messages encrypted with NaCl box (X25519 + XSalsa20-Poly1305)
 - **Federated architecture** - No central authority, run your own server
 - **Domain-based identity** - Simple username@domain addressing
 - **First-contact security** - Unknown senders require acceptance
@@ -94,8 +94,7 @@ Comprehensive documentation in `/docs`:
 
 - **Signatures**: Ed25519 (used by servers to sign key attestations)
 - **Encryption**: NaCl box (X25519 + XSalsa20-Poly1305) for message E2EE
-- **Hashing**: BLAKE2b
-- **Library**: libsodium via Go bindings
+- **Library**: Go `x/crypto/nacl/box` + `x/crypto/ed25519`
 
 ### Trust Model
 
@@ -145,7 +144,7 @@ go build -o bin\mailx-client.exe cmd\client\main.go
 
 ### Requirements
 
-- Go 1.21+
+- Go 1.24+
 - Protocol Buffers compiler (protoc)
 - SQLite
 
