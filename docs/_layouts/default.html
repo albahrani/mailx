@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ page.description | default: site.description }}" />
+    <link rel="stylesheet" href="{{ "/assets/css/site.css" | relative_url }}" />
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+
+    <header class="top">
+      <div class="container">
+        <div class="nav">
+          <a class="brand" href="{{ "/" | relative_url }}">
+            <span class="brandMark" aria-hidden="true"></span>
+            <span class="brandText">MailX</span>
+          </a>
+          <nav class="menu" aria-label="Primary">
+            <a href="{{ "/overview/" | relative_url }}">Overview</a>
+            <a href="{{ "/pages/architecture/" | relative_url }}">Architecture</a>
+            <a href="{{ "/pages/protocol/" | relative_url }}">Protocol</a>
+            <a href="{{ "/pages/threat-model/" | relative_url }}">Threat Model</a>
+            <a class="cta" href="https://github.com/albahrani/mailx">GitHub</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <main id="content" class="main">
+      <div class="container">
+        {% if page.hero == true %}
+        <div class="heroFrame" aria-hidden="true"></div>
+        {% endif %}
+
+        <article class="content">
+          {{ content }}
+        </article>
+
+        <footer class="footer">
+          <div class="footGrid">
+            <div>
+              <div class="footTitle">MailX</div>
+              <div class="footText">Email, made simple and secure.</div>
+            </div>
+            <div>
+              <div class="footTitle">Start here</div>
+              <a href="{{ "/" | relative_url }}">Docs home</a>
+              <a href="{{ "/overview/" | relative_url }}">Overview</a>
+            </div>
+            <div>
+              <div class="footTitle">Deep dives</div>
+              <a href="{{ "/pages/architecture/" | relative_url }}">Architecture</a>
+              <a href="{{ "/pages/protocol/" | relative_url }}">Protocol</a>
+              <a href="{{ "/pages/threat-model/" | relative_url }}">Threat Model</a>
+              <a href="{{ "/pages/roadmap/" | relative_url }}">Roadmap</a>
+            </div>
+          </div>
+          <div class="footNote">
+            <span>Demo/reference implementation. Not production-ready.</span>
+          </div>
+        </footer>
+      </div>
+    </main>
+  </body>
+</html>

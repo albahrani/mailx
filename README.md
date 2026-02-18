@@ -1,21 +1,33 @@
-# MailX - Secure Federated Email Replacement
+# MailX
 
-A modern, secure, self-hostable alternative to email with end-to-end encryption by default.
+![MailX banner](assets/banner.svg)
 
-## Overview
+MailX is a federated email replacement that makes one thing non-negotiable: private messages should stay private.
 
-MailX is a federated messaging system designed to replace traditional email with better security and privacy. It features:
+End-to-end encryption is the default. First-time senders do not land straight in your inbox. And you can run your own server.
 
-- **End-to-end encryption by default** - All messages encrypted with NaCl box (X25519 + XSalsa20-Poly1305)
-- **Federated architecture** - No central authority, run your own server
-- **Domain-based identity** - Simple username@domain addressing
-- **First-contact security** - Unknown senders require acceptance
-- **Open protocol** - Documented gRPC/protobuf specification
-- **Self-hosting first** - Minimal dependencies, easy to deploy
+Links:
 
-## Quick Start
+- Try it now: `QUICKSTART.md`
+- Demo walkthrough: `demo/README.md`
+- Docs hub: `docs/index.md`
 
-### Run the Demo
+## Why MailX
+
+- Email should feel safe by default.
+- Spam should not be a full-time job.
+- Your address should stay simple: `name@domain`.
+- You should be able to self-host without becoming a security expert.
+
+## How It Feels
+
+Alice sends Bob a message.
+
+Bob sees it in Requests (because Alice is new). One explicit Accept, and the conversation continues in Inbox.
+
+No fragile filters. No “hope the spam folder caught it”. No plaintext sitting on a server.
+
+## Try The Demo (2 minutes)
 
 ```bash
 cd demo
@@ -29,176 +41,30 @@ cd demo
 ./setup.ps1
 ```
 
-This starts 3 servers (alice.local, bob.local, carol.local) that can exchange encrypted messages.
+This starts three demo servers that can exchange encrypted messages.
 
-See [demo/README.md](demo/README.md) for detailed walkthrough.
+Next: `demo/README.md`
 
-## Repository Structure
+## What You Get Today (Demo v0.1)
 
-```
-mailx/
-├── docs/              # Comprehensive documentation
-│   ├── PRD_Server.md      # Server product requirements
-│   ├── PRD_Client.md      # Client product requirements
-│   ├── Architecture.md    # System architecture
-│   ├── ThreatModel.md     # Security threat model
-│   ├── Protocol.md        # Protocol specification
-│   └── Roadmap.md         # Development roadmap
-  ├── server/            # Go server implementation
-│   ├── cmd/server/        # Server entry point
-│   ├── internal/          # Internal packages
-│   │   ├── crypto/        # Cryptography (NaCl box, Ed25519)
-│   │   ├── storage/       # Database (SQLite)
-│   │   └── federation/    # Server discovery
-│   └── proto/             # gRPC protocol definitions
-├── client/            # Go CLI client implementation
-│   ├── cmd/client/        # Client entry point
-│   └── internal/crypto/   # Client-side crypto
-└── demo/              # Docker-based demo setup
-    ├── docker-compose.yml # 3 servers + client (Docker Compose)
-    ├── config/            # Server configurations
-    └── README.md          # Demo walkthrough
-```
+- Server + CLI client
+- End-to-end encrypted messages by default
+- Federation via well-known discovery
+- First-contact flow (Requests -> Accept -> Inbox)
 
-## Documentation
+## Learn More (Without The Wall Of Text)
 
-Comprehensive documentation in `/docs`:
+- Big picture: `docs/overview.md`
+- Architecture: `docs/Architecture.md`
+- Protocol: `docs/Protocol.md`
+- Threat model (honest limitations): `docs/ThreatModel.md`
+- Roadmap: `docs/Roadmap.md`
 
-- **[PRD_Server.md](docs/PRD_Server.md)** - Server requirements: federation, identity, anti-abuse, storage, etc.
-- **[PRD_Client.md](docs/PRD_Client.md)** - Client requirements: key management, UX, multi-device, etc.
-- **[Architecture.md](docs/Architecture.md)** - System design: identity model, E2EE, federation protocol
-- **[ThreatModel.md](docs/ThreatModel.md)** - Security analysis: threats, mitigations, assumptions
-- **[Protocol.md](docs/Protocol.md)** - Wire protocol specification (gRPC/protobuf)
-- **[Roadmap.md](docs/Roadmap.md)** - Development plan: Demo → Alpha → Beta → v1.0
+## Status and Safety
 
-## Features
+MailX is currently a demo/reference implementation.
 
-### Current (Demo v0.1)
+- It is designed to be easy to read, run, and iterate on.
+- It is not production-ready.
 
-- ✅ **Server**: Go-based gRPC server with SQLite storage
-- ✅ **Client**: Go CLI client with interactive mode
-- ✅ **E2EE**: NaCl box encryption for all messages
-- ✅ **Federation**: Server discovery via well-known endpoints
-- ✅ **Identity**: Server-attested user encryption keys (NaCl box/X25519) with Ed25519 signing attestations (`signKey`)
-- ✅ **Demo**: Docker Compose setup with 3 servers
-
-### Planned (See Roadmap)
-
-- **Alpha**: GUI client, key transparency, multi-device support
-- **Beta**: Mobile apps, forward secrecy, external security audit
-- **v1.0**: Production-ready with full security features
-
-## Security
-
-### Cryptography
-
-- **Signatures**: Ed25519 (used by servers to sign key attestations)
-- **Encryption**: NaCl box (X25519 + XSalsa20-Poly1305) for message E2EE
-- **Library**: Go `x/crypto/nacl/box` + `x/crypto/ed25519`
-
-### Trust Model
-
-- **Domain keys** as root of trust (published via DNS/HTTPS)
-- **Server attestation** of user public keys
-- **Trust on first use** (TOFU) for contacts
-- **Key transparency** (future) for detecting key substitution
-
-### Threat Protection
-
-See [docs/ThreatModel.md](docs/ThreatModel.md) for complete analysis.
-
-- ✅ Content confidentiality (E2EE)
-- ✅ Key integrity for contact keys (server-signed key attestations)
-- ⚠️ Metadata privacy (partial - TLS only)
-- 🔮 Traffic analysis resistance (future)
-
-## Building from Source
-
-### Server
-
-```bash
-cd server
-go build -o bin/mailx-server cmd/server/main.go
-./bin/mailx-server config.json
-```
-
-### Client
-
-```bash
-cd client
-go build -o bin/mailx-client cmd/client/main.go
-./bin/mailx-client
-```
-
-Windows (PowerShell):
-
-```powershell
-cd server
-go build -o bin\mailx-server.exe cmd\server\main.go
-./bin/mailx-server.exe config.json
-
-cd ..\client
-go build -o bin\mailx-client.exe cmd\client\main.go
-./bin/mailx-client.exe
-```
-
-### Requirements
-
-- Go 1.24+
-- Protocol Buffers compiler (protoc)
-- SQLite
-
-## Contributing
-
-This is an early-stage project. Contributions welcome!
-
-**Areas needing help:**
-- Security review and testing
-- Client implementations (GUI, mobile)
-- Documentation improvements
-- Federation testing
-- Performance optimization
-
-See [docs/Roadmap.md](docs/Roadmap.md) for planned features.
-
-## License
-
-[License TBD - Recommend MIT or Apache 2.0 for open source]
-
-## Goals
-
-From the project vision:
-
-1. **Privacy First** - E2EE by default, minimal metadata
-2. **Self-Hosting First** - Easy to deploy and maintain
-3. **Decentralization** - No central authority required
-4. **Pragmatic Security** - Balance security with usability
-5. **Open Standards** - Documented protocol, interoperable
-
-## Status
-
-**Current Phase**: Demo v0.1 ✅
-
-- Functional server and client
-- E2EE message exchange working
-- 3-server federation demo operational
-- Comprehensive documentation complete
-
-**Next Phase**: Alpha v0.2 (Q2 2026)
-
-- GUI client
-- Key transparency
-- External security review
-- 100+ users across 10+ servers
-
-See [docs/Roadmap.md](docs/Roadmap.md) for full timeline.
-
-## Contact
-
-- **Repository**: https://github.com/albahrani/mailx
-- **Issues**: https://github.com/albahrani/mailx/issues
-- **Security**: See [docs/ThreatModel.md](docs/ThreatModel.md)
-
----
-
-**⚠️ Security Notice**: This is demo software. Do not use for sensitive communications without a security audit. See threat model for limitations.
+If you are evaluating it for serious use, start with: `docs/ThreatModel.md`

@@ -1,0 +1,23 @@
+title: MailX
+description: Email, made simple and secure.
+
+# GitHub Pages / Jekyll
+markdown: kramdown
+permalink: pretty
+
+# We keep Pages content inside docs/.
+include:
+  - "_layouts"
+  - "_includes"
+  - "assets"
+  - "pages"
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+kramdown:
+  input: GFM
+  hard_wrap: false

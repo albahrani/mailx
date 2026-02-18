@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="360" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MailX - Email, made simple and secure">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B1220"/>
+      <stop offset="0.55" stop-color="#0B2A3A"/>
+      <stop offset="1" stop-color="#12324B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="260" y1="60" x2="980" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#48D6C6"/>
+      <stop offset="0.5" stop-color="#7BE7B6"/>
+      <stop offset="1" stop-color="#9CE7FF"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.28 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="card" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="360" rx="28" fill="url(#bg)"/>
+
+  <!-- Ambient geometry -->
+  <g opacity="0.9" filter="url(#softGlow)">
+    <path d="M1020 40C1110 40 1180 110 1180 200C1180 290 1110 340 1000 340C920 340 860 305 820 252C785 205 790 145 835 105C885 60 940 40 1020 40Z" fill="url(#accent)"/>
+    <path d="M80 290C40 250 40 185 85 145C130 105 210 110 270 150C330 190 345 250 305 295C260 345 130 350 80 290Z" fill="#2BA3FF" opacity="0.18"/>
+  </g>
+
+  <!-- Card -->
+  <g filter="url(#card)">
+    <rect x="96" y="74" width="1008" height="212" rx="22" fill="#0B1627" fill-opacity="0.78" stroke="#1B3450"/>
+    <rect x="96" y="74" width="1008" height="212" rx="22" fill="url(#accent)" fill-opacity="0.06"/>
+  </g>
+
+  <!-- Mark -->
+  <g transform="translate(132 122)">
+    <path d="M0 48C0 21.49 21.49 0 48 0H128C154.51 0 176 21.49 176 48V128C176 154.51 154.51 176 128 176H48C21.49 176 0 154.51 0 128V48Z" fill="#0E2235" stroke="#254B68"/>
+    <path d="M45 58L88 97L131 58" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M45 118L88 79L131 118" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    <circle cx="144" cy="36" r="10" fill="#9CE7FF" opacity="0.9"/>
+  </g>
+
+  <!-- Text -->
+  <g transform="translate(340 124)">
+    <text x="0" y="48" fill="#EAF6FF" font-size="52" font-weight="800" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" letter-spacing="0.2">MailX</text>
+    <text x="0" y="90" fill="#B7D2E6" font-size="22" font-weight="500" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">Email, made simple and secure.</text>
+
+    <g transform="translate(0 122)">
+      <rect x="0" y="0" width="248" height="46" rx="14" fill="#0F2537" stroke="#23455F"/>
+      <text x="18" y="30" fill="#DFF7FF" font-size="16" font-weight="600" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">End-to-end encrypted by default</text>
+    </g>
+    <g transform="translate(266 122)">
+      <rect x="0" y="0" width="212" height="46" rx="14" fill="#0F2537" stroke="#23455F"/>
+      <text x="18" y="30" fill="#DFF7FF" font-size="16" font-weight="600" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">Federated and self-hostable</text>
+    </g>
+    <g transform="translate(496 122)">
+      <rect x="0" y="0" width="252" height="46" rx="14" fill="#0F2537" stroke="#23455F"/>
+      <text x="18" y="30" fill="#DFF7FF" font-size="16" font-weight="600" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">Spam-resistant first contact</text>
+    </g>
+  </g>
+
+  <!-- Subtle grid -->
+  <g opacity="0.14">
+    <path d="M100 28H1100" stroke="#9CE7FF"/>
+    <path d="M100 332H1100" stroke="#9CE7FF"/>
+    <path d="M100 28V332" stroke="#9CE7FF"/>
+    <path d="M1100 28V332" stroke="#9CE7FF"/>
+  </g>
+</svg>
