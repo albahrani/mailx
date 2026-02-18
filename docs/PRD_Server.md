@@ -35,12 +35,9 @@ The MailX server is a federated messaging server designed to replace traditional
 - **Fallback**: Direct configuration for testing/demo
 
 ### 2.2 Inter-Server Communication
-- **Protocol**: gRPC over mTLS for server-to-server communication
-  - TLS 1.3 minimum
-  - Certificate verification against domain keys
-- **Authentication**: Mutual authentication using domain keys
-  - Each server presents certificate signed by domain key
-  - Verify peer domain key against discovery mechanism
+- **Protocol**: gRPC for server-to-server communication
+  - mTLS is planned for production-grade federation; the demo implementation does not establish mTLS
+  - Demo may use TLS with self-signed certs and skip verification
 - **Rate Limiting**: Per-domain rate limits to prevent abuse
   - Default: 100 messages/minute per remote domain
   - Configurable per peer
@@ -49,7 +46,7 @@ The MailX server is a federated messaging server designed to replace traditional
 - **Address Resolution**: Parse recipient address to extract domain
 - **Delivery Protocol**: 
   - Lookup remote server endpoint
-  - Establish mTLS connection
+  - Establish gRPC connection (TLS/mTLS varies by deployment)
   - Submit encrypted message blob
   - Receive delivery acknowledgment
 - **Retry Logic**: Exponential backoff for failed deliveries
@@ -187,17 +184,16 @@ The MailX server is a federated messaging server designed to replace traditional
 
 ### 8.1 Authentication
 - **User Authentication**: Password-based with rate limiting
-  - bcrypt password hashing (cost 12)
+  - Planned: bcrypt/argon2 password hashing (demo uses a placeholder)
   - Max 5 failed attempts per hour
   - Optional 2FA support (TOTP)
-- **Server Authentication**: mTLS for federation
-  - Verify peer certificates against domain keys
+- **Server Authentication**: Planned mTLS for federation
 
 ### 8.2 Authorization
 - **User Isolation**: Users can only access their own messages
 - **Admin Permissions**: Separate admin role for management operations
 - **API Access**: Token-based authentication for client APIs
-  - JWT tokens with expiration
+  - Demo uses a simple access token (not JWT)
   - Refresh token mechanism
 
 ### 8.3 Data Protection

@@ -40,7 +40,7 @@ mailx/
 #### Architecture.md (21,587 chars)
 - System architecture overview
 - Identity model: domain as root of trust
-- Federation protocol with mTLS
+- Federation protocol (demo: gRPC with optional TLS; no mTLS)
 - End-to-end encryption with NaCl
 - Key transparency design (future)
 - Anti-enumeration measures
@@ -59,7 +59,7 @@ mailx/
 #### Protocol.md (17,911 chars)
 - Protocol stack (gRPC/TLS)
 - Message formats (Protocol Buffers)
-- Cryptographic operations (Ed25519, NaCl)
+- Cryptographic operations (Ed25519 signing for key attestations, NaCl box for E2EE)
 - Authentication mechanisms
 - Federation protocol details
 - Rate limiting design
@@ -127,11 +127,13 @@ mailx/
 ### 5. Demo Environment ✅
 
 **Components**:
-- `docker-compose.yml` - 3 federated servers + client
+- `docker-compose.yml` - 3 federated servers + client (Docker Compose)
 - `Dockerfile.server` - Server container
 - `Dockerfile.client` - Client container
 - `setup.sh` - One-command setup script
+- `setup.ps1` - One-command setup script (Windows/PowerShell)
 - `test_integration.sh` - Integration testing
+- `test_integration.ps1` - Integration testing (Windows/PowerShell)
 - `README.md` - Complete demo walkthrough
 
 **Configuration**:
@@ -148,7 +150,9 @@ mailx/
 
 **Scripts**:
 - `verify_build.sh` - Comprehensive build verification
+- `verify_build.ps1` - Comprehensive build verification (Windows/PowerShell)
 - `demo/test_integration.sh` - Integration testing
+- `demo/test_integration.ps1` - Integration testing (Windows/PowerShell)
 
 **Results**:
 - ✅ Server builds successfully (21MB binary)
@@ -170,7 +174,7 @@ mailx/
 ## Security Features
 
 ### Cryptography
-- **Ed25519** for digital signatures (user and server keys)
+- **Ed25519** for digital signatures (server signing keys for key attestations)
 - **NaCl box** (X25519 + XSalsa20-Poly1305) for E2EE
 - **BLAKE2b** for hashing
 - **Go crypto libraries** (golang.org/x/crypto)
@@ -195,18 +199,18 @@ mailx/
 
 ### Federation
 ```
-Alice (server A) → mTLS → Bob (server B)
-                     ↓
-              Encrypted Message
-              (E2EE with Bob's key)
+Alice (server A) → gRPC (+TLS when configured) → Bob (server B)
+                      ↓
+               Encrypted Message
+               (E2EE with Bob's key)
 ```
 
 ### Identity Hierarchy
 ```
 DNS Domain
-  └─ Server Key (Ed25519)
-      └─ User Keys (Ed25519)
-          └─ Device Keys (future)
+  └─ Server Signing Key (Ed25519)
+      └─ User Encryption Keys (NaCl box/X25519)
+           └─ Device Keys (future)
 ```
 
 ### Message Flow
@@ -214,7 +218,7 @@ DNS Domain
 1. Client encrypts with recipient's public key
 2. Client sends to local server
 3. Server discovers remote server (DNS/HTTPS)
-4. Server delivers via mTLS to remote server
+4. Server delivers to remote server via federation gRPC (TLS optional in demo)
 5. Remote server stores encrypted blob
 6. Recipient fetches and decrypts
 ```
@@ -227,7 +231,7 @@ DNS Domain
 - ✅ /docs with PRD, architecture, threat model, protocol, roadmap
 - ✅ /server implementation
 - ✅ /client implementation
-- ✅ /demo with docker-compose
+- ✅ /demo with Docker Compose
 
 **PRD Documents**:
 - ✅ PRD_Server.md with all required sections
@@ -296,7 +300,7 @@ The mailx project is ready for:
 
 ## Security Notice
 
-⚠️ **This is demo software**. While it implements E2EE and follows security best practices, it has not been audited by security professionals and should not be used for sensitive communications without:
+⚠️ **This is demo software**. While it implements E2EE, it has not been audited by security professionals and should not be used for sensitive communications without:
 - External security audit
 - Production TLS configuration
 - Proper password hashing (bcrypt/argon2)

@@ -25,6 +25,12 @@ Run the setup script to build and start the servers:
 ./setup.sh
 ```
 
+Windows (PowerShell):
+
+```powershell
+./setup.ps1
+```
+
 This will:
 - Build Docker images for server and client
 - Start 3 server instances
@@ -35,11 +41,28 @@ This will:
 There are two ways to use the demo:
 
 #### Option A: Interactive Client (Recommended)
-
+ 
 Use the included Docker client:
+ 
+```bash
+docker compose run --rm client alice_config.json
+```
+
+Non-interactive examples:
 
 ```bash
-docker-compose run --rm client /mailx-client /data/alice_config.json
+docker compose run --rm client alice_config.json register alice alice.local password123 server-a.local:8443
+docker compose run --rm client alice_config.json login password123
+docker compose run --rm client alice_config.json send bob@bob.local Hello "Testing the MailX system!"
+docker compose run --rm client bob_config.json list requests 10
+docker compose run --rm client bob_config.json accept alice@alice.local
+docker compose run --rm client bob_config.json list inbox 10
+```
+ 
+Windows (PowerShell) using Docker Compose v2:
+ 
+```powershell
+docker compose run --rm client alice_config.json
 ```
 
 Or use the pre-built client directly (if you have the binary):
@@ -109,9 +132,10 @@ help                                   - Show available commands
 register <user> <domain> <pass> <srv>  - Register new account
 login <password>                       - Login to account
 send <recipient> <subject> <body>      - Send encrypted message
-list [folder] [limit]                  - List messages (default: inbox, 10)
-read <message-id>                      - Read and decrypt a message
-exit                                   - Quit client
+  list [folder] [limit]                  - List messages (default: inbox, 10)
+  read <message-id>                      - Read and decrypt a message
+  accept <address>                        - Accept contact; moves requests -> inbox
+  exit                                   - Quit client
 ```
 
 ## Folders
@@ -140,8 +164,8 @@ curl http://localhost:8080/.well-known/mailx-server | jq
 
 ### End-to-End Encryption
 
-All messages are encrypted client-side using NaCl (libsodium):
-1. Client generates Ed25519 key pair on registration
+All messages are encrypted client-side using NaCl (box / X25519):
+1. Client generates a NaCl box (X25519) key pair on registration
 2. Server signs user's public key (attestation)
 3. Messages encrypted with recipient's public key
 4. Server stores only encrypted blobs
@@ -155,11 +179,11 @@ Servers discover each other via:
 
 ### Security Features
 
-- **Identity**: Ed25519 keys for users and servers
+- **Identity**: NaCl box (X25519) for user encryption keys; Ed25519 for server signing keys
 - **Authentication**: Password-based with server attestation
-- **Authorization**: Token-based (JWT-style)
+- **Authorization**: Token-based (demo tokens are not JWT)
 - **Encryption**: NaCl box for E2EE
-- **Signatures**: All messages signed by sender
+- **Signatures**: Server signs user public keys (key attestations)
 - **First Contact**: Unknown senders go to "requests" folder
 
 ## Testing Scenarios
@@ -189,8 +213,13 @@ alice> send bob@bob.local,carol@carol.local Test Group message
 
 Send message to new contact:
 - Message goes to recipient's "requests" folder
-- Recipient must accept to move to inbox
+- Recipient must accept to move to inbox (use `accept <address>`)
 - Future messages go directly to inbox
+
+## TLS Notes
+
+- In the demo, gRPC runs over TLS (self-signed cert) when `config/tls.crt` and `config/tls.key` exist.
+- The `/.well-known/mailx-server` HTTP endpoint is served over plain HTTP in the demo.
 
 ## Troubleshooting
 
@@ -198,16 +227,30 @@ Send message to new contact:
 
 Check logs:
 ```bash
-docker-compose logs server-a
-docker-compose logs server-b
-docker-compose logs server-c
+docker compose logs server-a
+docker compose logs server-b
+docker compose logs server-c
+```
+
+Windows (PowerShell) with Docker Compose v2:
+
+```powershell
+docker compose logs server-a
+docker compose logs server-b
+docker compose logs server-c
 ```
 
 ### Connection refused
 
 Ensure servers are running:
 ```bash
-docker-compose ps
+docker compose ps
+```
+
+Windows (PowerShell) with Docker Compose v2:
+
+```powershell
+docker compose ps
 ```
 
 Check server is listening:
@@ -219,8 +262,8 @@ curl http://localhost:8080/.well-known/mailx-server
 
 Check both sender and recipient logs:
 ```bash
-docker-compose logs server-a | grep ERROR
-docker-compose logs server-b | grep ERROR
+docker compose logs server-a | grep ERROR
+docker compose logs server-b | grep ERROR
 ```
 
 ### Permission errors
@@ -229,6 +272,8 @@ Ensure data directories are writable:
 ```bash
 chmod -R 777 data/
 ```
+
+On Windows, file permissions are handled differently; if you hit bind-mount permission issues, prefer running Docker Desktop with WSL2 integration enabled and keep the repo in your WSL filesystem.
 
 ## Data Persistence
 
@@ -254,7 +299,7 @@ Server configurations in `config/`:
 Default settings:
 - Max message size: 25 MB
 - Default quota: 10 GB per user
-- No TLS (demo only - production should use TLS)
+- gRPC uses TLS in the demo (self-signed); HTTP well-known is plain HTTP
 
 ## Network Architecture
 
@@ -285,7 +330,9 @@ Default settings:
 ## Security Notes
 
 ⚠️ **This is a DEMO configuration**:
-- No TLS (messages encrypted but metadata visible)
+- Self-signed TLS for gRPC (do not copy to production)
+- HTTP `/.well-known/mailx-server` is plain HTTP
+- Metadata is still visible to servers (subject in demo metadata; sender/recipient addresses)
 - Simplified password hashing
 - No rate limiting enforced
 - Containers run as root
@@ -295,7 +342,7 @@ Default settings:
 - Proper TLS certificates
 - bcrypt/argon2 password hashing
 - Rate limiting and DoS protection
-- Proper JWT implementation
+- A real signed token format (e.g., JWT) and robust session handling
 - Security hardening
 - External security audit
 
@@ -313,7 +360,7 @@ After running the demo:
 To stop and remove everything:
 
 ```bash
-docker-compose down -v
+docker compose down -v
 rm -rf data/
 ```
 

@@ -54,29 +54,30 @@ Each MailX deployment is anchored to a DNS domain. The domain owner controls the
 **Identity Hierarchy:**
 ```
 DNS Domain (example.com)
-    └─ Server Key (Ed25519)
-        └─ User Keys (Ed25519)
-            └─ Device Keys (Ed25519) [optional for multi-device]
+    └─ Server Signing Key (Ed25519)
+        └─ User Encryption Keys (NaCl box / X25519)
+            └─ Device Keys (future)
 ```
 
 ### 2.2 Domain Keys
 
 **Generation:**
-- Server generates Ed25519 key pair on first initialization
+- Server generates an Ed25519 signing key pair on first initialization
 - Private key stored encrypted at rest
-- Public key published via DNS and HTTPS
+- Signing public key published via DNS and HTTPS
 
 **Publication:**
 ```
 # DNS TXT Record
-_mailx.example.com. IN TXT "v=mailx1;k=<base64-encoded-public-key>;e=https://mailx.example.com:8443"
+_mailx.example.com. IN TXT "v=mailx1;k=<base64-encoded-signing-public-key>;e=https://mailx.example.com:8443"
 
 # HTTPS Well-Known Endpoint
 GET https://example.com/.well-known/mailx-server
 {
   "version": "1.0",
   "domain": "example.com",
-  "publicKey": "<base64-encoded-public-key>",
+  "publicKey": "<base64-encoded-server-public-key>",
+  "signKey": "<base64-encoded-ed25519-signing-public-key>",
   "endpoints": {
     "grpc": "mailx.example.com:8443",
     "http": "https://mailx.example.com:8080"
@@ -85,6 +86,8 @@ GET https://example.com/.well-known/mailx-server
   "expiresAt": null
 }
 ```
+
+Note: In the demo, `/.well-known/mailx-server` is served over plain HTTP; production deployments should serve it over HTTPS.
 
 ### 2.3 Server Attestation
 
@@ -95,7 +98,7 @@ When a user registers, the server attests to their public key:
 UserIdentity {
     username: "alice"
     domain: "example.com"
-    publicKey: <user-ed25519-public-key>
+    publicKey: <user-x25519-public-key>
     serverSignature: <signature over (username || domain || publicKey)>
     createdAt: timestamp
 }
@@ -103,14 +106,14 @@ UserIdentity {
 
 **Verification Process:**
 1. Client receives UserIdentity from server
-2. Fetch server public key via DNS/HTTPS
-3. Verify `serverSignature` using server public key
+2. Fetch server signing public key via DNS/HTTPS
+3. Verify `serverSignature` using server signing public key
 4. Accept user public key if signature valid
 
 ### 2.4 User Keys
 
 **Key Management:**
-- Each user generates Ed25519 key pair on account creation
+- Each user generates a NaCl box (X25519) key pair on account creation
 - Private key stored in client device (never shared)
 - Public key registered with server
 - Server signs public key to create binding
@@ -163,28 +166,25 @@ DeviceKey {
 
 ### 3.2 Mutual TLS (mTLS)
 
-All server-to-server communication uses mTLS:
+The demo implementation does not establish mutual TLS for server-to-server communication.
+
+Transport security for federation is currently:
+- gRPC with TLS when servers are configured with `tlsCertFile`/`tlsKeyFile`
+- certificate verification may be skipped in demo to support self-signed certs
 
 **Certificate Requirements:**
-- Each server generates TLS certificate signed by domain key
-- Certificate contains domain name in Subject Alternative Name (SAN)
-- Short-lived certificates (7 days) auto-renewed
+This section describes a planned production-grade design.
 
 **Connection Establishment:**
 ```
 1. Server A initiates TLS connection to Server B
-2. Server B presents certificate signed by its domain key
-3. Server A verifies:
-   a. Certificate signed by Server B's domain key
-   b. Domain key matches discovered public key
-   c. Certificate not expired
-4. Server B verifies Server A's certificate (mutual)
-5. Establish encrypted channel
+2. (Planned) Servers authenticate each other via mTLS and/or an explicit peer auth protocol
+3. Establish encrypted channel
 ```
 
 ### 3.3 Peer Authorization
 
-After mTLS handshake, additional authorization:
+After transport authentication (planned), additional authorization may be required:
 
 **Challenge-Response:**
 ```
@@ -196,32 +196,20 @@ After mTLS handshake, additional authorization:
 
 ### 3.4 Message Delivery Protocol
 
-**gRPC Service Definition:**
+**gRPC Service Definition (Implemented):**
 ```protobuf
-service DeliveryService {
-  rpc DeliverMessage(DeliveryRequest) returns (DeliveryResponse);
-  rpc GetServerInfo(ServerInfoRequest) returns (ServerInfo);
+service FederationService {
+  rpc DeliverMessage(DeliverMessageRequest) returns (DeliverMessageResponse);
+  rpc GetServerInfo(ServerInfoRequest) returns (ServerInfoResponse);
+  rpc GetUserKey(GetUserKeyRequest) returns (GetUserKeyResponse);
 }
 
-message DeliveryRequest {
-  string sender = 1;          // alice@a.com
-  string recipient = 2;       // bob@b.com
-  bytes encrypted_blob = 3;   // E2EE message
-  bytes metadata = 4;         // Minimal metadata (timestamp, size)
-  bytes sender_signature = 5; // Signature over blob by sender's server
-}
-
-message DeliveryResponse {
-  enum Status {
-    ACCEPTED = 0;
-    REJECTED_NO_SUCH_USER = 1;
-    REJECTED_QUOTA_EXCEEDED = 2;
-    REJECTED_RATE_LIMITED = 3;
-    REJECTED_BLOCKED = 4;
-  }
-  Status status = 1;
-  string message_id = 2;      // Server-assigned ID
-  int64 timestamp = 3;        // Server received timestamp
+message DeliverMessageRequest {
+  string sender = 1;
+  string recipient = 2;
+  bytes encrypted_message = 3;
+  FederationMessageMetadata metadata = 4;
+  bytes sender_server_signature = 5; // present in proto; not verified in demo
 }
 ```
 
@@ -230,15 +218,15 @@ message DeliveryResponse {
 1. Client encrypts message with recipient's public key
 2. Client sends to local server via Client API
 3. Server A validates user authentication
-4. Server A signs encrypted blob with domain key
+4. (Planned) Server A signs encrypted blob with domain key
 5. Server A discovers Server B via DNS
-6. Server A establishes mTLS connection to Server B
+6. Server A establishes a gRPC connection to Server B (TLS optional in demo)
 7. Server A calls DeliverMessage RPC
-8. Server B verifies:
-   a. Recipient exists
-   b. Sender not blocked
-   c. Quota available
-   d. Rate limits not exceeded
+8. Server B checks:
+    a. Recipient exists
+    b. Sender not blocked
+    c. Quota available
+    d. Rate limits not exceeded
 9. Server B stores encrypted blob
 10. Server B returns ACCEPTED or error
 11. Server A notifies client of delivery status
@@ -270,8 +258,8 @@ EncryptedMessage {
     tag: <authentication tag>
   }
   
-  // Signature over (sender || recipient || encryptedPayload)
-  senderSignature: <ed25519 signature>
+  // Sender-signed envelopes are planned; not implemented in current reference implementation.
+  senderSignature: <planned>
 }
 
 Payload (before encryption) {
@@ -301,14 +289,14 @@ Payload (before encryption) {
 **Decryption Process:**
 ```
 1. Client receives EncryptedMessage
-2. Verify sender signature using sender's public key
+2. (Planned) Verify sender signature using sender's public key
 3. Decrypt payload:
-   payload = crypto_box_open(
-     ciphertext: encryptedPayload,
-     nonce: nonce,
-     senderPublicKey: alice.publicKey,
-     recipientPrivateKey: bob.privateKey
-   )
+    payload = crypto_box_open(
+      ciphertext: encryptedPayload,
+      nonce: nonce,
+      senderPublicKey: alice.publicKey,
+      recipientPrivateKey: bob.privateKey
+    )
 4. Parse JSON payload
 5. Display message to user
 ```
@@ -415,7 +403,7 @@ Implement Double Ratchet algorithm (Signal Protocol):
    - Can perform timing correlation attacks
    - Cannot decrypt TLS traffic (forward secrecy)
    - Cannot modify messages (authenticated encryption)
-   - Mitigations: mTLS, rate limiting
+   - Mitigations: TLS (when enabled), planned peer auth hardening, rate limiting
 
 3. **Compromised Server**
    - Can access stored encrypted messages
@@ -457,7 +445,7 @@ Implement Double Ratchet algorithm (Signal Protocol):
 | Attack | Impact | Mitigation |
 |--------|--------|------------|
 | Server key substitution | Impersonation | Key transparency log, client verification |
-| MITM on federation | Message interception | mTLS with domain key verification |
+| MITM on federation | Message interception | TLS (when enabled) + planned peer auth; demo skips cert verification |
 | Message replay | Duplicate delivery | Nonce-based deduplication, timestamps |
 | Spam/DoS | Resource exhaustion | Rate limiting, first-contact protocol, quotas |
 | Metadata leakage | Traffic analysis | TLS everywhere, timing obfuscation (future) |
@@ -546,7 +534,7 @@ Implement Double Ratchet algorithm (Signal Protocol):
 │  (Client-Server, Server-Server)  │
 ├──────────────────────────────────┤
 │           TLS 1.3                │
-│    (mTLS for federation)         │
+│    (mTLS planned for federation) │
 ├──────────────────────────────────┤
 │         TCP / HTTP/2             │
 └──────────────────────────────────┘
@@ -556,7 +544,7 @@ Implement Double Ratchet algorithm (Signal Protocol):
 
 **gRPC Protocol Buffers** for all APIs:
 - Client ↔ Server: gRPC over TLS
-- Server ↔ Server: gRPC over mTLS
+- Server ↔ Server: gRPC (TLS optional in demo; mTLS planned)
 - Efficient binary encoding
 - Strong typing and versioning
 - Cross-language support

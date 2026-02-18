@@ -62,7 +62,7 @@ This document analyzes the security threats facing the MailX system and describe
 │  └──────────────────────────────────┘          │
 └─────────────────────────────────────────────────┘
                      │
-                     │ mTLS
+                      │ gRPC/TLS (optional in demo)
                      ▼
 ┌─────────────────────────────────────────────────┐
 │            Untrusted Zone                       │
@@ -96,7 +96,7 @@ This document analyzes the security threats facing the MailX system and describe
 
 **Mitigations:**
 - TLS 1.3 for all connections
-- mTLS for server federation
+- Transport security for federation varies in demo; mutual TLS is not implemented
 - Future: Timing obfuscation, cover traffic
 
 #### 3.1.2 Active Network Attacker
@@ -222,7 +222,7 @@ This document analyzes the security threats facing the MailX system and describe
 
 **Entry Points:**
 1. Client API (authenticated gRPC)
-2. Federation API (mTLS gRPC)
+2. Federation API (gRPC; TLS optional in demo)
 3. Admin API (authenticated gRPC)
 4. Database
 
@@ -234,7 +234,7 @@ This document analyzes the security threats facing the MailX system and describe
 - Configuration errors
 
 **Mitigations:**
-- Strong authentication (bcrypt, rate limiting)
+- Strong authentication (planned: proper password hashing and rate limiting)
 - Parameterized queries (ORM)
 - Rate limiting and quotas
 - Principle of least privilege
@@ -244,7 +244,7 @@ This document analyzes the security threats facing the MailX system and describe
 ### 4.3 Federation Attack Surface
 
 **Entry Points:**
-1. mTLS connections from peers
+1. Federation gRPC connections from peers
 2. DNS/HTTPS discovery endpoints
 
 **Potential Vulnerabilities:**
@@ -335,10 +335,10 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker sends message impersonating Alice
 **Impact:** High - impersonation attack
 **Mitigations:**
-- ✅ All messages signed by sender's private key
-- ✅ Server verifies sender identity
-- ✅ Recipient verifies signature
-**Residual Risk:** Low - requires compromising private key
+- ✅ End-to-end encryption (confidentiality)
+- ⚠️ Sender-signed message envelopes are not implemented yet
+- ⚠️ Rely on transport security and server-side controls for now
+**Residual Risk:** Medium - message authenticity/integrity against a malicious sender is not fully covered without sender signatures
 
 #### T7: Replay Attacks
 **Threat:** Attacker re-sends old message
@@ -355,7 +355,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker floods server with requests
 **Impact:** High - service unavailable
 **Mitigations:**
-- ✅ Rate limiting per IP, per domain, per user
+- ⚠️ Rate limiting per IP, per domain, per user (planned; not enforced in demo)
 - ✅ Connection limits
 - ✅ Request timeouts
 - ✅ Resource quotas
@@ -385,8 +385,8 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker guesses user password
 **Impact:** High - account takeover
 **Mitigations:**
-- ✅ bcrypt with high cost factor
-- ✅ Rate limiting on login attempts
+- ⚠️ Password hashing is a placeholder in the demo implementation
+- ⚠️ Rate limiting on login attempts (planned; not enforced in demo)
 - ✅ Account lockout after failures
 - ✅ Optional 2FA (TOTP)
 **Residual Risk:** Low - strong password required
@@ -395,7 +395,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker steals session token
 **Impact:** High - temporary account access
 **Mitigations:**
-- ✅ Short-lived JWT tokens
+- ⚠️ Short-lived access tokens (demo tokens are not JWT)
 - ✅ Secure token storage
 - ✅ TLS prevents network interception
 - ✅ Token refresh mechanism
@@ -405,9 +405,8 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Rogue server pretends to be legitimate domain
 **Impact:** Critical - MITM attack
 **Mitigations:**
-- ✅ Domain keys published via DNS+HTTPS
-- ✅ mTLS with certificate verification
-- ✅ Certificate pinning
+- ✅ Domain signing keys published via well-known (`signKey`) for verifying key attestations
+- ⚠️ Demo federation does not implement mTLS or strict certificate verification
 - 🔮 Future: Key transparency log
 **Residual Risk:** Medium - DNS compromise possible
 
@@ -551,13 +550,13 @@ This document analyzes the security threats facing the MailX system and describe
 ### 7.1 MUST Have (Critical)
 
 - ✅ End-to-end encryption for all messages
-- ✅ Digital signatures on all messages
+- ⚠️ Digital signatures on all messages (planned; not implemented in current reference implementation)
 - ✅ Authenticated encryption (no plaintext mode)
 - ✅ TLS 1.3 for all network communication
-- ✅ mTLS for server federation
+- ⚠️ Federation transport security (TLS optional in demo; mTLS planned)
 - ✅ Secure key storage on client
-- ✅ Strong password hashing (bcrypt)
-- ✅ Rate limiting and DoS protection
+- ⚠️ Strong password hashing (planned; demo uses a placeholder)
+- ⚠️ Rate limiting and DoS protection (planned; not enforced in demo)
 - ✅ Input validation and sanitization
 
 ### 7.2 SHOULD Have (Important)
@@ -683,9 +682,9 @@ This document analyzes the security threats facing the MailX system and describe
 ### 10.1 Phase 1: Demo v0.1 (Current)
 - ✅ Basic E2EE with libsodium
 - ✅ TLS for client-server
-- ✅ mTLS for federation
+- ⚠️ Federation uses gRPC with optional TLS in demo (no mTLS)
 - ✅ Password authentication
-- ✅ Rate limiting
+- ⚠️ Rate limiting (planned; not enforced in demo)
 
 ### 10.2 Phase 2: Alpha
 - Key transparency log (basic)
@@ -721,7 +720,7 @@ The MailX threat model identifies significant security challenges in building a 
 
 1. **End-to-end encryption** prevents content access by servers and network attackers
 2. **Digital signatures** prevent message forgery and impersonation
-3. **mTLS federation** secures server-to-server communication
+3. **Federation transport security** is planned to use mTLS; demo does not implement mTLS
 4. **Key transparency** (future) detects key substitution attacks
 5. **Rate limiting and quotas** mitigate abuse and DoS
 

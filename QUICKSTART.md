@@ -11,10 +11,17 @@ cd demo
 ./setup.sh
 ```
 
+Windows (PowerShell):
+
+```powershell
+cd demo
+./setup.ps1
+```
+
 This starts 3 federated servers. Then run:
 
 ```bash
-docker-compose run --rm client /mailx-client /data/alice.json
+docker compose run --rm client alice_config.json
 ```
 
 See [demo/README.md](demo/README.md) for complete demo walkthrough.
@@ -39,6 +46,16 @@ go build -o bin/mailx-server cmd/server/main.go
 # Build client  
 cd ../client
 go build -o bin/mailx-client cmd/client/main.go
+```
+
+Windows (PowerShell):
+
+```powershell
+cd server
+go build -o bin\mailx-server.exe cmd\server\main.go
+
+cd ..\client
+go build -o bin\mailx-client.exe cmd\client\main.go
 ```
 
 ### Run Server
@@ -137,14 +154,16 @@ Get message-id from the list command.
 │   Client A  │◄──── gRPC/TLS ────►│  Server A   │
 │  (alice)    │                    │ alice.local │
 └─────────────┘                    └──────┬──────┘
-                                          │
-                                    mTLS  │
-                                          │
-                                    ┌─────▼──────┐
-                                    │  Server B  │
-                                    │ bob.local  │
-                                    └────────────┘
+                                           │
+                                gRPC/TLS*  │
+                                           │
+                                     ┌─────▼──────┐
+                                     │  Server B  │
+                                     │ bob.local  │
+                                     └────────────┘
 ```
+
+\* Demo note: federation uses TLS when configured, but does not do mutual TLS.
 
 ## Key Concepts
 
@@ -162,8 +181,8 @@ Get message-id from the list command.
 
 ### Identity
 
-- Each user has Ed25519 key pair
-- Server attests user keys with digital signature
+- Each user has a NaCl box (X25519) encryption key pair
+- Server attests user encryption public keys using an Ed25519 signing key (published as `signKey` via well-known)
 - Trust on first use (TOFU) for contacts
 
 ### First Contact
@@ -204,7 +223,7 @@ curl http://localhost:8080/.well-known/mailx-server
 
 Check server logs for errors. For demo:
 ```bash
-docker-compose logs server-a
+docker compose logs server-a
 ```
 
 For local server, check stdout.
@@ -222,7 +241,8 @@ For local server, check stdout.
 
 - Not audited by security professionals
 - Simplified password hashing (TODO: bcrypt)
-- No TLS in demo (use `--insecure` flag for testing only)
+- Demo gRPC uses self-signed TLS when configured (client skips certificate verification)
+- Demo `/.well-known/mailx-server` is served over plain HTTP
 - No rate limiting enforced yet
 
 See [docs/ThreatModel.md](docs/ThreatModel.md) for complete security analysis.

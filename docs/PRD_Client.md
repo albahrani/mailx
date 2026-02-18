@@ -8,7 +8,7 @@ The MailX client provides a user interface for the secure email replacement syst
 ### 1.1 Account Registration
 - **New Account Creation**: Register on a MailX server
   - Input: server address, desired username, password
-  - Generate local key pair (Ed25519)
+  - Generate local encryption key pair (NaCl box / X25519)
   - Submit public key to server for attestation
   - Store credentials securely in local keychain/keyring
 - **Account Import**: Import existing account on new device
@@ -32,7 +32,7 @@ The MailX client provides a user interface for the secure email replacement syst
 ## 2. Key Management
 
 ### 2.1 Identity Keys
-- **Key Generation**: Generate Ed25519 key pair on first run
+- **Key Generation**: Generate NaCl box (X25519) key pair on first run
   - Private key never leaves device (or encrypted backup)
   - Public key registered with server
 - **Key Storage**: Secure local storage
@@ -142,7 +142,7 @@ The MailX client provides a user interface for the secure email replacement syst
 - **Message View**: Full message display
   - Decrypt on demand
   - Show sender identity with trust indicator
-  - Verify signature
+  - (Planned) Verify sender signature
   - Display attachments with download option
 - **Threading**: Group related messages
   - In-reply-to and references headers

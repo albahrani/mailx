@@ -1,12 +1,12 @@
-# Protocol Specification - MailX v1.0
+# Protocol Specification - MailX
 
 ## 1. Overview
 
 MailX is a federated messaging protocol designed to replace email with better security and privacy. This document specifies the wire protocol, message formats, and API contracts.
 
 **Protocol Version:** 1.0  
-**Status:** Draft  
-**Last Updated:** 2026-02-17
+**Status:** Draft (implementation-aligned)  
+**Last Updated:** 2026-02-18
 
 ## 2. Protocol Stack
 
@@ -18,7 +18,7 @@ MailX is a federated messaging protocol designed to replace email with better se
 │   gRPC Services                │
 │   (Protocol Buffers)           │
 ├────────────────────────────────┤
-│   TLS 1.3 / mTLS               │
+│   TLS (optional in demo)       │
 ├────────────────────────────────┤
 │   HTTP/2                       │
 ├────────────────────────────────┤
@@ -30,32 +30,30 @@ MailX is a federated messaging protocol designed to replace email with better se
 
 ### 3.1 Client-to-Server Communication
 
-**Protocol:** gRPC over TLS 1.3  
+**Protocol:** gRPC over TLS (recommended for production)  
 **Port:** 8443 (default, configurable)  
-**TLS Requirements:**
-- Minimum version: TLS 1.3
-- Server presents valid TLS certificate
-- Client verifies certificate (standard CA or pinned)
-- Forward secrecy required (ECDHE key exchange)
+**TLS Requirements (Production):**
+- Use TLS with normal certificate verification (CA or pinning)
+
+**Demo Behavior:**
+- gRPC may use self-signed TLS and clients may skip verification
 
 ### 3.2 Server-to-Server Communication
 
-**Protocol:** gRPC over mutual TLS (mTLS)  
+**Protocol:** gRPC (TLS optional in demo)  
 **Port:** 8443 (default, configurable)  
-**mTLS Requirements:**
-- Both servers present certificates
-- Certificates signed by respective domain keys
-- Each server verifies peer's certificate against published domain key
-- Certificate subject must match domain name (SAN)
+The demo implementation does not establish mutual TLS.
+
+Production-grade federation authentication/authorization is still evolving; treat mTLS requirements as planned unless explicitly marked implemented.
 
 ### 3.3 Discovery Endpoints
 
-**DNS Discovery:**
+**DNS Discovery (Planned):**
 ```
-_mailx.<domain> TXT "v=mailx1;k=<base64-pubkey>;e=<grpc-endpoint>"
+_mailx.<domain> TXT "v=mailx1;..."
 ```
 
-**HTTPS Well-Known:**
+**Well-Known (Implemented):**
 ```
 GET https://<domain>/.well-known/mailx-server
 Content-Type: application/json
@@ -63,13 +61,18 @@ Content-Type: application/json
 {
   "version": "1.0",
   "domain": "example.com",
-  "publicKey": "<base64-encoded-ed25519-public-key>",
+  "publicKey": "<base64-encoded-server-public-key>",
+  "signKey": "<base64-encoded-ed25519-signing-public-key>",
   "endpoints": {
     "grpc": "mailx.example.com:8443"
   },
   "created": "2026-01-01T00:00:00Z"
 }
 ```
+
+Notes:
+- `signKey` is required for verifying server signatures on user key attestations.
+- In the demo, the well-known endpoint is served over plain HTTP.
 
 ## 4. Data Formats
 
@@ -91,8 +94,11 @@ Content-Type: application/json
 
 ### 4.3 Key Format
 
-**Key Type:** Ed25519 (signing and identity)  
-**Key Size:** 32 bytes (256 bits)  
+MailX uses two distinct key types:
+
+- **User encryption keys:** NaCl box (X25519) public keys (32 bytes)
+- **Server signing keys:** Ed25519 public keys (32 bytes) used to sign key attestations
+
 **Encoding:** Base64 (standard alphabet, with padding)
 
 **Example:**
@@ -123,13 +129,16 @@ service ClientService {
   
   // Contact operations
   rpc GetContactKey(GetContactKeyRequest) returns (GetContactKeyResponse);
-  rpc UpdateContact(UpdateContactRequest) returns (UpdateContactResponse);
+
+  // Trust operations
+  // Promote a contact from "unknown" (requests) to "accepted" (inbox).
+  rpc AcceptContact(AcceptContactRequest) returns (AcceptContactResponse);
 }
 
 message RegisterRequest {
   string username = 1;
-  string password_hash = 2;  // bcrypt hash, client-side hashing
-  bytes public_key = 3;      // Ed25519 public key
+  string password = 2;
+  bytes public_key = 3;      // User encryption public key (NaCl box / X25519)
 }
 
 message RegisterResponse {
@@ -143,8 +152,8 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string access_token = 3;   // JWT token
-  int64 expires_at = 4;      // Unix timestamp
+  string access_token = 1;
+  int64 expires_at = 2;
 }
 
 message SendMessageRequest {
@@ -179,7 +188,7 @@ message MessageMetadata {
 
 message ListMessagesRequest {
   string access_token = 1;
-  string folder = 2;  // "inbox", "sent", "requests", "trash"
+  string folder = 2;  // "inbox", "sent", "requests"
   int32 limit = 3;
   int32 offset = 4;
 }
@@ -209,6 +218,15 @@ message GetMessageResponse {
   bytes encrypted_message = 3;
   MessageMetadata metadata = 4;
 }
+
+message AcceptContactRequest {
+  string access_token = 1;
+  string address = 2;
+}
+
+message AcceptContactResponse {
+  string message = 1;
+}
 ```
 
 ### 5.2 Federation API
@@ -228,8 +246,14 @@ message DeliverMessageRequest {
   string sender = 1;           // alice@a.com
   string recipient = 2;        // bob@b.com
   bytes encrypted_message = 3; // E2EE message blob
-  MessageMetadata metadata = 4;
+  FederationMessageMetadata metadata = 4;
   bytes sender_server_signature = 5;  // Signature by sender's server
+}
+
+message FederationMessageMetadata {
+  int64 timestamp = 1;
+  int32 size = 2;
+  string subject = 3;
 }
 
 message DeliverMessageResponse {
@@ -252,15 +276,14 @@ message ServerInfoRequest {
 
 message ServerInfoResponse {
   string domain = 1;
-  bytes public_key = 2;  // Domain Ed25519 public key
+  bytes public_key = 2;  // Server encryption public key (NaCl box / X25519)
   string version = 3;    // Protocol version
   ServerCapabilities capabilities = 4;
 }
 
 message ServerCapabilities {
   bool supports_e2ee = 1;
-  bool supports_key_transparency = 2;
-  int32 max_message_size = 3;
+  int32 max_message_size = 2;
 }
 
 message GetUserKeyRequest {
@@ -293,13 +316,11 @@ message GetUserKeyResponse {
     "ciphertext": "<base64-encrypted-payload>"
   },
   
-  "signature": {
-    "algorithm": "ed25519",
-    "publicKey": "<sender-public-key-base64>",
-    "signature": "<base64-signature>"
-  }
+  "signature": null
 }
 ```
+
+Note: Sender-signed message envelopes are not implemented in the current reference implementation.
 
 ### 6.2 Plaintext Payload (Before Encryption)
 
@@ -329,17 +350,11 @@ message GetUserKeyResponse {
 
 ### 7.1 Key Generation
 
-**User Key Pair:**
-```
-(publicKey, privateKey) = crypto_sign_keypair()
-// Ed25519, generates 32-byte public key and 64-byte private key
-```
+**User Encryption Key Pair (NaCl box / X25519):**
+Generated via NaCl box key generation; public and private keys are 32 bytes each.
 
 **Server Domain Key Pair:**
-```
-(publicKey, privateKey) = crypto_sign_keypair()
-// Ed25519, same as user keys
-```
+Server signing key pair is Ed25519 (`crypto_sign_keypair()`), distinct from user encryption keys.
 
 ### 7.2 Message Encryption
 
@@ -380,28 +395,13 @@ for each recipient:
 
 ### 7.3 Message Signing
 
-```
-signature = crypto_sign_detached(
-  message: ciphertext,
-  private_key: sender_privkey
-)
-```
-
-### 7.4 Signature Verification
-
-```
-valid = crypto_sign_verify_detached(
-  signature: signature,
-  message: ciphertext,
-  public_key: sender_pubkey
-)
-```
+Not implemented in the reference implementation. Integrity in transit relies on transport security and AEAD integrity of NaCl box.
 
 ### 7.5 Server Attestation
 
 **Signing User Public Key:**
 ```
-attestation_data = username || "@" || domain || public_key
+attestation_data = "mailx-key-attestation-v1\n" + address + "\n" + b64(public_key) + "\n" + createdAtUnix
 server_signature = crypto_sign_detached(
   message: attestation_data,
   private_key: server_domain_privkey
@@ -410,7 +410,7 @@ server_signature = crypto_sign_detached(
 
 **Verifying Attestation:**
 ```
-attestation_data = username || "@" || domain || public_key
+attestation_data = "mailx-key-attestation-v1\n" + address + "\n" + b64(public_key) + "\n" + createdAtUnix
 valid = crypto_sign_verify_detached(
   signature: server_signature,
   message: attestation_data,
@@ -424,9 +424,8 @@ valid = crypto_sign_verify_detached(
 
 **Registration:**
 ```
-1. Client hashes password with bcrypt (cost 12)
-2. Client sends: {username, password_hash, public_key}
-3. Server stores password_hash
+1. Client sends: {username, password, public_key}
+2. Server stores a placeholder password hash (demo)
 4. Server signs user's public_key
 5. Server returns: {user_id, server_signature}
 ```
@@ -435,55 +434,26 @@ valid = crypto_sign_verify_detached(
 ```
 1. Client sends: {username, password}
 2. Server verifies password against stored hash
-3. Server generates JWT token (expires in 1 hour)
+3. Server generates an access token (demo: base64-encoded userID:timestamp)
 4. Server returns: {access_token, expires_at}
 ```
 
 ### 8.2 Token-Based Authentication
 
-**JWT Token Structure:**
-```json
-{
-  "header": {
-    "alg": "HS256",
-    "typ": "JWT"
-  },
-  "payload": {
-    "sub": "alice@example.com",
-    "iat": 1708196400,
-    "exp": 1708200000,
-    "iss": "mailx-server-example.com"
-  }
-}
-```
+The demo implementation uses a simple base64-encoded `userID:timestamp` token (not a real JWT).
 
 **Using Token:**
 ```
 Every API call includes: access_token in request
 Server validates:
-  - Token signature
+  - Token format and expiry
   - Token not expired
   - User still exists and active
 ```
 
 ### 8.3 mTLS for Federation
 
-**Certificate Generation:**
-```
-1. Server generates TLS certificate
-2. Certificate signed by domain private key
-3. Certificate SAN includes domain name
-4. Certificate valid for 7 days
-5. Auto-renew before expiration
-```
-
-**Connection Authentication:**
-```
-1. Both servers present certificates during TLS handshake
-2. Verify certificate signature against domain public key
-3. Verify domain public key matches discovered key (DNS/HTTPS)
-4. If valid, establish mTLS connection
-```
+Not implemented in the reference implementation.
 
 ## 9. Federation Protocol
 
@@ -509,6 +479,7 @@ Response:
   "version": "1.0",
   "domain": "example.com",
   "publicKey": "<full-public-key-base64>",
+  "signKey": "<ed25519-signing-public-key-base64>",
   "endpoints": {
     "grpc": "mailx.example.com:8443"
   },
@@ -533,18 +504,17 @@ Verify:
    c. Discover Server B endpoint (cache or DNS lookup)
    
 3. Server A connects to Server B
-   a. Establish mTLS connection
-   b. Verify Server B's certificate and domain key
+   a. Establish gRPC connection (TLS optional in demo)
    
 4. Server A delivers message
-   a. Call FederationService.DeliverMessage
-   b. Include sender, recipient, encrypted_message, signature
+    a. Call FederationService.DeliverMessage
+    b. Include sender, recipient, encrypted_message, signature
    
 5. Server B processes delivery
-   a. Verify sender's server signature
-   b. Check recipient exists
-   c. Check quotas and rate limits
-   d. Store encrypted message
+    a. (Planned) Verify sender's server signature
+    b. Check recipient exists
+    c. Check quotas and rate limits
+    d. Store encrypted message
    e. Return ACCEPTED or error
    
 6. Server A updates delivery status
@@ -645,15 +615,14 @@ Graceful degradation if feature unavailable
 
 ## 12. Security Considerations
 
-### 12.1 Mandatory Security Features
+### 12.1 Security Features (Current Reference Implementation)
 
-- ✅ TLS 1.3 minimum for all connections
-- ✅ mTLS for server-to-server
-- ✅ Ed25519 signatures on all messages
-- ✅ XSalsa20-Poly1305 encryption (libsodium)
-- ✅ bcrypt password hashing (cost ≥ 12)
-- ✅ JWT tokens with expiration
-- ✅ Rate limiting on all APIs
+- ✅ E2EE using NaCl box
+- ✅ Server-signed key attestations verified by clients
+- ⚠️ Transport security varies by deployment (demo uses self-signed TLS for gRPC when configured; well-known is plain HTTP)
+- ⚠️ Password hashing is a placeholder
+- ⚠️ Access tokens are not JWT
+- ⚠️ Rate limiting is not enforced
 
 ### 12.2 Security Headers
 
@@ -738,9 +707,9 @@ Implementations MUST:
 - Support protocol version 1.0
 - Implement E2EE with libsodium
 - Use Ed25519 for signatures
-- Enforce TLS 1.3 minimum
-- Validate all signatures
-- Implement rate limiting
+- Use TLS in production deployments
+- Validate key attestations (server-signed user key bindings)
+- Implement rate limiting (recommended for production)
 - Support gRPC and Protocol Buffers
 
 ### 14.2 SHOULD Requirements
@@ -775,7 +744,7 @@ Implementations MAY:
 **Standards:**
 - [RFC 3339](https://tools.ietf.org/html/rfc3339) - Date and time format
 - [RFC 5280](https://tools.ietf.org/html/rfc5280) - X.509 certificates
-- [RFC 7519](https://tools.ietf.org/html/rfc7519) - JWT tokens
+- [RFC 7519](https://tools.ietf.org/html/rfc7519) - JWT tokens (optional future token format)
 
 ---
 

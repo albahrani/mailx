@@ -22,6 +22,13 @@ cd demo
 ./setup.sh
 ```
 
+Windows (PowerShell):
+
+```powershell
+cd demo
+./setup.ps1
+```
+
 This starts 3 servers (alice.local, bob.local, carol.local) that can exchange encrypted messages.
 
 See [demo/README.md](demo/README.md) for detailed walkthrough.
@@ -37,10 +44,10 @@ mailx/
 │   ├── ThreatModel.md     # Security threat model
 │   ├── Protocol.md        # Protocol specification
 │   └── Roadmap.md         # Development roadmap
-├── server/            # Go server implementation
+  ├── server/            # Go server implementation
 │   ├── cmd/server/        # Server entry point
 │   ├── internal/          # Internal packages
-│   │   ├── crypto/        # Cryptography (Ed25519, NaCl)
+│   │   ├── crypto/        # Cryptography (NaCl box, Ed25519)
 │   │   ├── storage/       # Database (SQLite)
 │   │   └── federation/    # Server discovery
 │   └── proto/             # gRPC protocol definitions
@@ -48,7 +55,7 @@ mailx/
 │   ├── cmd/client/        # Client entry point
 │   └── internal/crypto/   # Client-side crypto
 └── demo/              # Docker-based demo setup
-    ├── docker-compose.yml # 3 servers + client
+    ├── docker-compose.yml # 3 servers + client (Docker Compose)
     ├── config/            # Server configurations
     └── README.md          # Demo walkthrough
 ```
@@ -72,7 +79,7 @@ Comprehensive documentation in `/docs`:
 - ✅ **Client**: Go CLI client with interactive mode
 - ✅ **E2EE**: NaCl box encryption for all messages
 - ✅ **Federation**: Server discovery via well-known endpoints
-- ✅ **Identity**: Ed25519 keys with server attestation
+- ✅ **Identity**: Server-attested user encryption keys (NaCl box/X25519) with Ed25519 signing attestations (`signKey`)
 - ✅ **Demo**: Docker Compose setup with 3 servers
 
 ### Planned (See Roadmap)
@@ -85,8 +92,8 @@ Comprehensive documentation in `/docs`:
 
 ### Cryptography
 
-- **Signatures**: Ed25519 (RFC 8032)
-- **Encryption**: NaCl box (X25519 + XSalsa20-Poly1305)
+- **Signatures**: Ed25519 (used by servers to sign key attestations)
+- **Encryption**: NaCl box (X25519 + XSalsa20-Poly1305) for message E2EE
 - **Hashing**: BLAKE2b
 - **Library**: libsodium via Go bindings
 
@@ -102,8 +109,7 @@ Comprehensive documentation in `/docs`:
 See [docs/ThreatModel.md](docs/ThreatModel.md) for complete analysis.
 
 - ✅ Content confidentiality (E2EE)
-- ✅ Message integrity (signatures)
-- ✅ Sender authentication (key-based)
+- ✅ Key integrity for contact keys (server-signed key attestations)
 - ⚠️ Metadata privacy (partial - TLS only)
 - 🔮 Traffic analysis resistance (future)
 
@@ -123,6 +129,18 @@ go build -o bin/mailx-server cmd/server/main.go
 cd client
 go build -o bin/mailx-client cmd/client/main.go
 ./bin/mailx-client
+```
+
+Windows (PowerShell):
+
+```powershell
+cd server
+go build -o bin\mailx-server.exe cmd\server\main.go
+./bin/mailx-server.exe config.json
+
+cd ..\client
+go build -o bin\mailx-client.exe cmd\client\main.go
+./bin/mailx-client.exe
 ```
 
 ### Requirements
