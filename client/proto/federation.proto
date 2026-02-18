@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mailx.federation.v1;
 
-option go_package = "github.com/albahrani/mailx/server/proto;proto";
+option go_package = "github.com/albahrani/mailx/client/proto;proto";
 
 // Federation service for server-to-server communication
 service FederationService {

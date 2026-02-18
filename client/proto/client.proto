@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mailx.client.v1;
 
-option go_package = "github.com/albahrani/mailx/server/proto;proto";
+option go_package = "github.com/albahrani/mailx/client/proto;proto";
 
 // Client service for user operations
 service ClientService {
@@ -17,12 +17,16 @@ service ClientService {
   
   // Contact operations
   rpc GetContactKey(GetContactKeyRequest) returns (GetContactKeyResponse);
+
+	// Trust operations
+	// Promote a contact from "unknown" (requests) to "accepted" (inbox).
+	rpc AcceptContact(AcceptContactRequest) returns (AcceptContactResponse);
 }
 
 message RegisterRequest {
   string username = 1;
   string password = 2;
-  bytes public_key = 3;  // Ed25519 public key
+  bytes public_key = 3;  // User encryption public key (NaCl box / X25519)
 }
 
 message RegisterResponse {
@@ -37,7 +41,7 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string access_token = 1;  // JWT token
+  string access_token = 1;  // Demo token (not JWT)
   int64 expires_at = 2;     // Unix timestamp
   string message = 3;
 }
@@ -115,4 +119,13 @@ message GetContactKeyResponse {
   bytes public_key = 2;
   bytes server_signature = 3;
   int64 created_at = 4;
+}
+
+message AcceptContactRequest {
+  string access_token = 1;
+  string address = 2;
+}
+
+message AcceptContactResponse {
+  string message = 1;
 }
