@@ -11,8 +11,11 @@ client/bin/
 *.out
 
 # Go
-go.work
-go.work.sum
+# go.work is intentionally tracked for cross-module integration tests.
+# If you prefer developer-local workspaces, remove go.work from git and re-add
+# these ignores.
+# go.work
+# go.work.sum
 
 # Data and configs
 *.db
