@@ -62,6 +62,7 @@ func (s *Server) discoverServer(ctx context.Context, domain string) (*federation
 		if info, ok := s.discoveryOverride[domain]; ok {
 			return info, nil
 		}
+		return nil, fmt.Errorf("server discovery failed: no override for %s", domain)
 	}
 	return s.discovery.DiscoverServer(ctx, domain)
 }

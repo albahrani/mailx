@@ -3,8 +3,10 @@ package app
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"net"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,8 +15,10 @@ import (
 	"github.com/albahrani/mailx/server/internal/storage"
 	pb "github.com/albahrani/mailx/server/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -131,6 +135,125 @@ func TestRemote_GetContactKey_FetchesAndVerifies(t *testing.T) {
 	}
 }
 
+func TestRemote_GetContactKey_DiscoveryFails(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	login, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	_, err = clientA.GetContactKey(ctx, &pb.GetContactKeyRequest{AccessToken: login.AccessToken, Address: "bob@b.test"})
+	st, _ := status.FromError(err)
+	if st == nil || st.Code() != codes.Unavailable {
+		t.Fatalf("expected Unavailable, got %v", err)
+	}
+}
+
+func TestRemote_GetContactKey_DialFails(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{
+		"b.test": {Domain: "b.test", PublicKey: make([]byte, crypto.SigningPublicKeySize), Endpoint: "unreachable", CachedAt: time.Now(), TTL: time.Hour},
+	}
+	serverA.federationDial = func(ctx context.Context, endpoint string, _ credentials.TransportCredentials) (*grpc.ClientConn, error) {
+		return nil, errors.New("dial failed")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	login, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	_, err = clientA.GetContactKey(ctx, &pb.GetContactKeyRequest{AccessToken: login.AccessToken, Address: "bob@b.test"})
+	st, _ := status.FromError(err)
+	if st == nil || st.Code() != codes.Unavailable {
+		t.Fatalf("expected Unavailable, got %v", err)
+	}
+}
+
+func TestRemote_GetContactKey_AttestationVerificationFails(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	serverB, _, lisB := newBufconnServerWithDomain(t, "b.test")
+
+	// Register user on B.
+	bUserKP, _ := crypto.GenerateKeyPair()
+	if err := serverB.storage.CreateUser(&storage.User{
+		ID:              "u-bob",
+		Username:        "bob",
+		Domain:          "b.test",
+		PasswordHash:    crypto.HashPassword("pw"),
+		PublicKey:       bUserKP.PublicKey,
+		ServerSignature: serverB.signKey.Sign(federation.KeyAttestationPayload("bob@b.test", bUserKP.PublicKey, time.Now().Unix())),
+		CreatedAt:       time.Now(),
+		QuotaBytes:      1024,
+	}); err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	// Discovery returns WRONG signing key for b.test.
+	wrongSigningKey := make([]byte, crypto.SigningPublicKeySize)
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{
+		"b.test": {Domain: "b.test", PublicKey: wrongSigningKey, Endpoint: "bufnet-b", CachedAt: time.Now(), TTL: time.Hour},
+	}
+	serverA.federationDial = func(ctx context.Context, endpoint string, _ credentials.TransportCredentials) (*grpc.ClientConn, error) {
+		if endpoint != "bufnet-b" {
+			return nil, errors.New("bad endpoint")
+		}
+		return dialBufconnListener(ctx, lisB)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	login, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	_, err = clientA.GetContactKey(ctx, &pb.GetContactKeyRequest{AccessToken: login.AccessToken, Address: "bob@b.test"})
+	st, _ := status.FromError(err)
+	if st == nil || st.Code() != codes.Unavailable {
+		t.Fatalf("expected Unavailable, got %v", err)
+	}
+}
+
 func TestRemote_SendMessage_DeliversViaFederation(t *testing.T) {
 	// Sender on A sends to recipient on B; A uses federation DeliverMessage.
 	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
@@ -216,5 +339,188 @@ func TestRemote_SendMessage_DeliversViaFederation(t *testing.T) {
 	}
 	if len(list.Messages) != 1 {
 		t.Fatalf("expected 1 delivered message, got %d", len(list.Messages))
+	}
+}
+
+func TestRemote_SendMessage_DiscoveryFails(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	loginA, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	blob := []byte("cipher")
+	resp, err := clientA.SendMessage(ctx, &pb.SendMessageRequest{AccessToken: loginA.AccessToken, Recipients: []string{"bob@b.test"}, EncryptedMessage: blob, Metadata: &pb.MessageMetadata{Timestamp: time.Now().Unix(), Size: int32(len(blob)), Subject: "hi"}})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	if len(resp.DeliveryStatuses) != 1 || resp.DeliveryStatuses[0].Status != pb.DeliveryStatus_FAILED {
+		t.Fatalf("expected failed status")
+	}
+	if !strings.Contains(resp.DeliveryStatuses[0].ErrorMessage, "server discovery") {
+		t.Fatalf("expected discovery error, got %q", resp.DeliveryStatuses[0].ErrorMessage)
+	}
+}
+
+func TestRemote_SendMessage_DialFails(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{
+		"b.test": {Domain: "b.test", PublicKey: make([]byte, crypto.SigningPublicKeySize), Endpoint: "unreachable", CachedAt: time.Now(), TTL: time.Hour},
+	}
+	serverA.federationDial = func(ctx context.Context, endpoint string, _ credentials.TransportCredentials) (*grpc.ClientConn, error) {
+		return nil, errors.New("dial failed")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	loginA, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	blob := []byte("cipher")
+	resp, err := clientA.SendMessage(ctx, &pb.SendMessageRequest{AccessToken: loginA.AccessToken, Recipients: []string{"bob@b.test"}, EncryptedMessage: blob, Metadata: &pb.MessageMetadata{Timestamp: time.Now().Unix(), Size: int32(len(blob)), Subject: "hi"}})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	if len(resp.DeliveryStatuses) != 1 || resp.DeliveryStatuses[0].Status != pb.DeliveryStatus_FAILED {
+		t.Fatalf("expected failed status")
+	}
+	if !strings.Contains(resp.DeliveryStatuses[0].ErrorMessage, "failed to connect") {
+		t.Fatalf("expected dial error, got %q", resp.DeliveryStatuses[0].ErrorMessage)
+	}
+}
+
+type failingFederationServer struct {
+	pb.UnimplementedFederationServiceServer
+}
+
+func (f *failingFederationServer) DeliverMessage(context.Context, *pb.DeliverMessageRequest) (*pb.DeliverMessageResponse, error) {
+	return nil, status.Error(codes.Unavailable, "nope")
+}
+
+func TestRemote_SendMessage_RemoteRPCError(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+
+	// Federation-only remote that errors.
+	gs := grpc.NewServer()
+	lisFail := bufconn.Listen(1024 * 1024)
+	pb.RegisterFederationServiceServer(gs, &failingFederationServer{})
+	go func() { _ = gs.Serve(lisFail) }()
+	t.Cleanup(func() {
+		gs.Stop()
+		_ = lisFail.Close()
+	})
+
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{
+		"b.test": {Domain: "b.test", PublicKey: make([]byte, crypto.SigningPublicKeySize), Endpoint: "bufnet-fail", CachedAt: time.Now(), TTL: time.Hour},
+	}
+	serverA.federationDial = func(ctx context.Context, endpoint string, _ credentials.TransportCredentials) (*grpc.ClientConn, error) {
+		if endpoint != "bufnet-fail" {
+			return nil, errors.New("bad endpoint")
+		}
+		return dialBufconnListener(ctx, lisFail)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	loginA, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	blob := []byte("cipher")
+	resp, err := clientA.SendMessage(ctx, &pb.SendMessageRequest{AccessToken: loginA.AccessToken, Recipients: []string{"bob@b.test"}, EncryptedMessage: blob, Metadata: &pb.MessageMetadata{Timestamp: time.Now().Unix(), Size: int32(len(blob)), Subject: "hi"}})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	if len(resp.DeliveryStatuses) != 1 || resp.DeliveryStatuses[0].Status != pb.DeliveryStatus_FAILED {
+		t.Fatalf("expected failed status")
+	}
+	if !strings.Contains(resp.DeliveryStatuses[0].ErrorMessage, "remote delivery failed") {
+		t.Fatalf("expected remote rpc error, got %q", resp.DeliveryStatuses[0].ErrorMessage)
+	}
+}
+
+func TestRemote_SendMessage_RemoteRejectedNoSuchUser(t *testing.T) {
+	serverA, _, lisA := newBufconnServerWithDomain(t, "a.test")
+	_, _, lisB := newBufconnServerWithDomain(t, "b.test")
+
+	// Wire discovery + dialer on A.
+	serverA.discoveryOverride = map[string]*federation.ServerInfo{
+		"b.test": {Domain: "b.test", PublicKey: make([]byte, crypto.SigningPublicKeySize), Endpoint: "bufnet-b", CachedAt: time.Now(), TTL: time.Hour},
+	}
+	serverA.federationDial = func(ctx context.Context, endpoint string, _ credentials.TransportCredentials) (*grpc.ClientConn, error) {
+		if endpoint != "bufnet-b" {
+			return nil, errors.New("bad endpoint")
+		}
+		return dialBufconnListener(ctx, lisB)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	connA, err := dialBufconnListener(ctx, lisA)
+	if err != nil {
+		t.Fatalf("dial A: %v", err)
+	}
+	defer connA.Close()
+	clientA := pb.NewClientServiceClient(connA)
+
+	aUserKP, _ := crypto.GenerateKeyPair()
+	if _, err := clientA.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aUserKP.PublicKey}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	loginA, err := clientA.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	blob := []byte("cipher")
+	resp, err := clientA.SendMessage(ctx, &pb.SendMessageRequest{AccessToken: loginA.AccessToken, Recipients: []string{"missing@b.test"}, EncryptedMessage: blob, Metadata: &pb.MessageMetadata{Timestamp: time.Now().Unix(), Size: int32(len(blob)), Subject: "hi"}})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	if len(resp.DeliveryStatuses) != 1 || resp.DeliveryStatuses[0].Status != pb.DeliveryStatus_FAILED {
+		t.Fatalf("expected failed status")
+	}
+	if resp.DeliveryStatuses[0].ErrorMessage == "" {
+		t.Fatalf("expected error message")
 	}
 }
