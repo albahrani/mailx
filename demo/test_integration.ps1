@@ -1,3 +1,7 @@
+param(
+  [switch]$Wait
+)
+
 $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -41,8 +45,8 @@ $cfgObj2 = @{
 [System.IO.File]::WriteAllText($cfg2, $cfgObj2, (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host "1. Starting test servers..."
-$p1 = Start-Process -FilePath $serverExe -ArgumentList @($cfg1) -NoNewWindow -PassThru -RedirectStandardOutput $log1 -RedirectStandardError $log1
-$p2 = Start-Process -FilePath $serverExe -ArgumentList @($cfg2) -NoNewWindow -PassThru -RedirectStandardOutput $log2 -RedirectStandardError $log2
+$p1 = Start-Process -FilePath $serverExe -ArgumentList @($cfg1) -NoNewWindow -PassThru -RedirectStandardOutput $log1 -RedirectStandardError ($log1 + '.err')
+$p2 = Start-Process -FilePath $serverExe -ArgumentList @($cfg2) -NoNewWindow -PassThru -RedirectStandardOutput $log2 -RedirectStandardError ($log2 + '.err')
 
 try {
   Write-Host "   Waiting for servers to start..."
@@ -60,13 +64,17 @@ try {
   Write-Host "[OK] Server 1 started on ports 19443 (gRPC) and 19080 (HTTP)"
   Write-Host "[OK] Server 2 started on ports 19543 (gRPC) and 19180 (HTTP)"
   Write-Host
-  Write-Host "Servers are running in background (PIDs: $($p1.Id), $($p2.Id))"
   Write-Host "Logs:"
   Write-Host "  $log1"
   Write-Host "  $log2"
   Write-Host
+  if ($Wait) {
+    Write-Host "Servers are running in background (PIDs: $($p1.Id), $($p2.Id))"
   Write-Host "Press Enter to stop servers and cleanup."
   [void](Read-Host)
+  } else {
+    Write-Host "Stopping servers and cleaning up (pass -Wait to keep them running)."
+  }
 } finally {
   foreach ($p in @($p1, $p2)) {
     if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }

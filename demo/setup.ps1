@@ -81,7 +81,7 @@ Invoke-Compose build
 
 Write-Host
 Write-Host "3. Starting servers..."
-Invoke-Compose up -d server-a server-b server-c
+Invoke-Compose up --detach server-a server-b server-c
 
 Write-Host
 Write-Host "4. Waiting for servers to start..."
