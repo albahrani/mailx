@@ -10,7 +10,6 @@ include:
   - "_layouts"
   - "_includes"
   - "assets"
-  - "pages"
 
 defaults:
   - scope:

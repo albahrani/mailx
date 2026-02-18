@@ -57,10 +57,10 @@ bob&gt; list inbox</code></pre>
 
 ## Deep Dives
 
-- `pages/architecture.md`
-- `pages/protocol.md`
-- `pages/threat-model.md`
-- `pages/roadmap.md`
+- `Architecture.md`
+- `Protocol.md`
+- `ThreatModel.md`
+- `Roadmap.md`
 
 ## Safety Note
 
