@@ -183,6 +183,75 @@ func TestAuthAndMessagingFlow_LocalDeliveryAndAccept(t *testing.T) {
 	}
 }
 
+func TestAuthAndMessagingFlow_RejectBlocksFutureDelivery(t *testing.T) {
+	srv := newTestServer(t)
+	conn, c := newBufconnClient(t, srv)
+	fClient := pb.NewFederationServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	aliceKP, _ := crypto.GenerateKeyPair()
+	bobKP, _ := crypto.GenerateKeyPair()
+	if _, err := c.Register(ctx, &pb.RegisterRequest{Username: "alice", Password: "pw", PublicKey: aliceKP.PublicKey}); err != nil {
+		t.Fatalf("Register(alice): %v", err)
+	}
+	if _, err := c.Register(ctx, &pb.RegisterRequest{Username: "bob", Password: "pw", PublicKey: bobKP.PublicKey}); err != nil {
+		t.Fatalf("Register(bob): %v", err)
+	}
+
+	aliceLogin, err := c.Login(ctx, &pb.LoginRequest{Username: "alice", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login(alice): %v", err)
+	}
+	bobLogin, err := c.Login(ctx, &pb.LoginRequest{Username: "bob", Password: "pw"})
+	if err != nil {
+		t.Fatalf("Login(bob): %v", err)
+	}
+
+	if _, err := c.SendMessage(ctx, &pb.SendMessageRequest{
+		AccessToken:      aliceLogin.AccessToken,
+		Recipients:       []string{"bob@example.test"},
+		EncryptedMessage: []byte("cipher"),
+		Metadata:         &pb.MessageMetadata{Timestamp: time.Now().Unix(), Size: 6, Subject: "hello"},
+	}); err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+
+	listResp, err := c.ListMessages(ctx, &pb.ListMessagesRequest{AccessToken: bobLogin.AccessToken, Folder: "requests", Limit: 10, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListMessages(requests): %v", err)
+	}
+	if listResp.TotalCount != 1 || len(listResp.Messages) != 1 {
+		t.Fatalf("unexpected requests counts: %d/%d", listResp.TotalCount, len(listResp.Messages))
+	}
+
+	if _, err := c.RejectContact(ctx, &pb.RejectContactRequest{AccessToken: bobLogin.AccessToken, Address: "alice@example.test"}); err != nil {
+		t.Fatalf("RejectContact: %v", err)
+	}
+
+	afterReject, err := c.ListMessages(ctx, &pb.ListMessagesRequest{AccessToken: bobLogin.AccessToken, Folder: "requests", Limit: 10, Offset: 0})
+	if err != nil {
+		t.Fatalf("ListMessages(requests after reject): %v", err)
+	}
+	if afterReject.TotalCount != 0 || len(afterReject.Messages) != 0 {
+		t.Fatalf("expected rejected requests to be cleared, got %d/%d", afterReject.TotalCount, len(afterReject.Messages))
+	}
+
+	deliverResp, err := fClient.DeliverMessage(ctx, &pb.DeliverMessageRequest{
+		Sender:           "alice@example.test",
+		Recipient:        "bob@example.test",
+		EncryptedMessage: []byte("cipher2"),
+		Metadata:         &pb.FederationMessageMetadata{Timestamp: time.Now().Unix(), Size: 7, Subject: "blocked"},
+	})
+	if err != nil {
+		t.Fatalf("DeliverMessage(blocked): %v", err)
+	}
+	if deliverResp.Status != pb.DeliverMessageResponse_REJECTED_BLOCKED {
+		t.Fatalf("expected blocked delivery, got %v", deliverResp.Status)
+	}
+}
+
 func TestLogin_InvalidPassword(t *testing.T) {
 	srv := newTestServer(t)
 	_, c := newBufconnClient(t, srv)

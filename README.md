@@ -24,7 +24,7 @@ Links:
 
 Alice sends Bob a message.
 
-Bob sees it in Requests (because Alice is new). One explicit Accept, and the conversation continues in Inbox.
+Bob sees it in Requests (because Alice is new). One explicit Accept moves the conversation into Inbox, and Reject blocks future messages from Alice.
 
 No fragile filters. No “hope the spam folder caught it”. No plaintext sitting on a server.
 
@@ -51,7 +51,7 @@ Next: `demo/README.md`
 - Server + CLI client
 - End-to-end encrypted messages by default
 - Federation via well-known discovery
-- First-contact flow (Requests -> Accept -> Inbox)
+- First-contact flow (Requests -> Accept/Reject -> Inbox/blocked)
 
 ## Learn More (Without The Wall Of Text)
 

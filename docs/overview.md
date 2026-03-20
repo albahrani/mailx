@@ -18,7 +18,7 @@ MailX is an attempt to keep the parts people love about email (addresses, domain
 
 You send a message.
 
-The recipient gets it, but if you are not yet trusted, it lands in Requests. One explicit accept, and future messages go to Inbox. No filters to tune. No surprise delivery of junk.
+The recipient gets it, but if you are not yet trusted, it lands in Requests. One explicit accept moves future messages to Inbox, and Reject blocks the sender. No filters to tune. No surprise delivery of junk.
 
 ## What MailX Is (and Is Not)
 

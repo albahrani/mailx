@@ -577,6 +577,8 @@ func (c *Client) Interactive(configFile string) {
 			fmt.Println("  send <recipient> <subject> <body>")
 			fmt.Println("  list [folder] [limit]")
 			fmt.Println("  read <message-id>")
+			fmt.Println("  accept <address>")
+			fmt.Println("  reject <address>")
 			fmt.Println("  exit")
 
 		case "register":
@@ -635,6 +637,56 @@ func (c *Client) Interactive(configFile string) {
 				fmt.Printf("Error: %v\n", err)
 			}
 
+		case "accept":
+			if len(parts) < 2 {
+				fmt.Println("Usage: accept <address>")
+				continue
+			}
+			if c.client == nil {
+				fmt.Println("Error: not connected to a server (configure serverAddr via config or register)")
+				continue
+			}
+			if c.config.AccessToken == "" {
+				fmt.Println("Error: not logged in")
+				continue
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_, err := c.client.AcceptContact(ctx, &pb.AcceptContactRequest{
+				AccessToken: c.config.AccessToken,
+				Address:     parts[1],
+			})
+			cancel()
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				continue
+			}
+			fmt.Printf("Contact accepted: %s\n", parts[1])
+
+		case "reject":
+			if len(parts) < 2 {
+				fmt.Println("Usage: reject <address>")
+				continue
+			}
+			if c.client == nil {
+				fmt.Println("Error: not connected to a server (configure serverAddr via config or register)")
+				continue
+			}
+			if c.config.AccessToken == "" {
+				fmt.Println("Error: not logged in")
+				continue
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_, err := c.client.RejectContact(ctx, &pb.RejectContactRequest{
+				AccessToken: c.config.AccessToken,
+				Address:     parts[1],
+			})
+			cancel()
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				continue
+			}
+			fmt.Printf("Contact rejected: %s\n", parts[1])
+
 		case "exit", "quit":
 			fmt.Println("Goodbye!")
 			return
@@ -688,6 +740,8 @@ func main() {
 			fmt.Println("  send <recipient> <subject> <body>")
 			fmt.Println("  list [folder] [limit]")
 			fmt.Println("  read <message-id>")
+			fmt.Println("  accept <address>")
+			fmt.Println("  reject <address>")
 			fmt.Println("  exit")
 			return
 
@@ -779,6 +833,32 @@ func main() {
 				os.Exit(1)
 			}
 			log.Printf("Contact accepted: %s", parts[1])
+			return
+
+		case "reject":
+			if len(parts) < 2 {
+				log.Printf("Usage: reject <address>")
+				os.Exit(2)
+			}
+			if client.client == nil {
+				log.Printf("Error: not connected to a server (configure serverAddr via config or register)")
+				os.Exit(1)
+			}
+			if client.config.AccessToken == "" {
+				log.Printf("Error: not logged in")
+				os.Exit(1)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_, err := client.client.RejectContact(ctx, &pb.RejectContactRequest{
+				AccessToken: client.config.AccessToken,
+				Address:     parts[1],
+			})
+			if err != nil {
+				log.Printf("Error: %v", err)
+				os.Exit(1)
+			}
+			log.Printf("Contact rejected: %s", parts[1])
 			return
 		}
 

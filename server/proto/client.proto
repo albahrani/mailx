@@ -21,6 +21,8 @@ service ClientService {
 	// Trust operations
 	// Promote a contact from "unknown" (requests) to "accepted" (inbox).
 	rpc AcceptContact(AcceptContactRequest) returns (AcceptContactResponse);
+	// Decline a first-contact request and block future delivery from the sender.
+	rpc RejectContact(RejectContactRequest) returns (RejectContactResponse);
 }
 
 message RegisterRequest {
@@ -127,5 +129,14 @@ message AcceptContactRequest {
 }
 
 message AcceptContactResponse {
+  string message = 1;
+}
+
+message RejectContactRequest {
+  string access_token = 1;
+  string address = 2;
+}
+
+message RejectContactResponse {
   string message = 1;
 }

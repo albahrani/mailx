@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.33.4
-// source: client.proto
+// source: proto/client.proto
 
 package proto
 
@@ -26,6 +26,7 @@ const (
 	ClientService_GetMessage_FullMethodName    = "/mailx.client.v1.ClientService/GetMessage"
 	ClientService_GetContactKey_FullMethodName = "/mailx.client.v1.ClientService/GetContactKey"
 	ClientService_AcceptContact_FullMethodName = "/mailx.client.v1.ClientService/AcceptContact"
+	ClientService_RejectContact_FullMethodName = "/mailx.client.v1.ClientService/RejectContact"
 )
 
 // ClientServiceClient is the client API for ClientService service.
@@ -46,6 +47,8 @@ type ClientServiceClient interface {
 	// Trust operations
 	// Promote a contact from "unknown" (requests) to "accepted" (inbox).
 	AcceptContact(ctx context.Context, in *AcceptContactRequest, opts ...grpc.CallOption) (*AcceptContactResponse, error)
+	// Decline a first-contact request and block future delivery from the sender.
+	RejectContact(ctx context.Context, in *RejectContactRequest, opts ...grpc.CallOption) (*RejectContactResponse, error)
 }
 
 type clientServiceClient struct {
@@ -126,6 +129,16 @@ func (c *clientServiceClient) AcceptContact(ctx context.Context, in *AcceptConta
 	return out, nil
 }
 
+func (c *clientServiceClient) RejectContact(ctx context.Context, in *RejectContactRequest, opts ...grpc.CallOption) (*RejectContactResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RejectContactResponse)
+	err := c.cc.Invoke(ctx, ClientService_RejectContact_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClientServiceServer is the server API for ClientService service.
 // All implementations must embed UnimplementedClientServiceServer
 // for forward compatibility.
@@ -144,6 +157,8 @@ type ClientServiceServer interface {
 	// Trust operations
 	// Promote a contact from "unknown" (requests) to "accepted" (inbox).
 	AcceptContact(context.Context, *AcceptContactRequest) (*AcceptContactResponse, error)
+	// Decline a first-contact request and block future delivery from the sender.
+	RejectContact(context.Context, *RejectContactRequest) (*RejectContactResponse, error)
 	mustEmbedUnimplementedClientServiceServer()
 }
 
@@ -174,6 +189,9 @@ func (UnimplementedClientServiceServer) GetContactKey(context.Context, *GetConta
 }
 func (UnimplementedClientServiceServer) AcceptContact(context.Context, *AcceptContactRequest) (*AcceptContactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AcceptContact not implemented")
+}
+func (UnimplementedClientServiceServer) RejectContact(context.Context, *RejectContactRequest) (*RejectContactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RejectContact not implemented")
 }
 func (UnimplementedClientServiceServer) mustEmbedUnimplementedClientServiceServer() {}
 func (UnimplementedClientServiceServer) testEmbeddedByValue()                       {}
@@ -322,6 +340,24 @@ func _ClientService_AcceptContact_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClientService_RejectContact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectContactRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientServiceServer).RejectContact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientService_RejectContact_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientServiceServer).RejectContact(ctx, req.(*RejectContactRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClientService_ServiceDesc is the grpc.ServiceDesc for ClientService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -357,7 +393,11 @@ var ClientService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "AcceptContact",
 			Handler:    _ClientService_AcceptContact_Handler,
 		},
+		{
+			MethodName: "RejectContact",
+			Handler:    _ClientService_RejectContact_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "client.proto",
+	Metadata: "proto/client.proto",
 }

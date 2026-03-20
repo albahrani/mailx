@@ -20,7 +20,7 @@ The umbrella PRD lives in [GitHub issue #2](https://github.com/albahrani/mailx/i
 
 - No persistent groups or shared group keys.
 - Multi-recipient delivery stays email-style fan-out.
-- First-contact messages land in Requests until accepted.
+- First-contact messages land in Requests until accepted or rejected.
 - Alpha should harden strict TLS verification, key transparency, auth, sync, and rate limiting.
 - Migration/import-export is allowed; a live email gateway is out of scope.
 - Push notifications stay out for now.
@@ -37,7 +37,7 @@ Shipped:
 - server and CLI client
 - E2EE by default
 - well-known discovery
-- first-contact accept flow
+- first-contact accept/reject flow
 - Docker demo environment
 
 ### Alpha v0.2

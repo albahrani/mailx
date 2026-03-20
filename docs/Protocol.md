@@ -71,7 +71,7 @@ Content-Type: application/json
 ```
 
 Notes:
-- `signKey` is required for verifying server signatures on user key attestations.
+- `signKey` is the domain signing key required for verifying server signatures on user-encryption-key attestations.
 - In the demo, the well-known endpoint is served over plain HTTP; alpha should use HTTPS.
 
 ## 4. Data Formats
@@ -133,6 +133,8 @@ service ClientService {
   // Trust operations
   // Promote a contact from "unknown" (requests) to "accepted" (inbox).
   rpc AcceptContact(AcceptContactRequest) returns (AcceptContactResponse);
+  // Decline a first-contact request and block future delivery from the sender.
+  rpc RejectContact(RejectContactRequest) returns (RejectContactResponse);
 }
 
 message RegisterRequest {
@@ -225,6 +227,15 @@ message AcceptContactRequest {
 }
 
 message AcceptContactResponse {
+  string message = 1;
+}
+
+message RejectContactRequest {
+  string access_token = 1;
+  string address = 2;
+}
+
+message RejectContactResponse {
   string message = 1;
 }
 ```
@@ -354,7 +365,7 @@ Note: Sender-signed message envelopes are not implemented in the current referen
 Generated via NaCl box key generation; public and private keys are 32 bytes each.
 
 **Server Domain Key Pair:**
-Server signing key pair is Ed25519 (`crypto_sign_keypair()`), distinct from user encryption keys.
+Domain signing key pair is Ed25519 (`crypto_sign_keypair()`), distinct from user encryption keys.
 
 ### 7.2 Message Encryption
 
@@ -399,7 +410,7 @@ The reference implementation does not implement sender-signed message envelopes.
 
 ### 7.5 Server Attestation
 
-**Signing User Public Key:**
+**Signing User Encryption Public Key:**
 ```
 attestation_data = "mailx-key-attestation-v1\n" + address + "\n" + b64(public_key) + "\n" + createdAtUnix
 server_signature = crypto_sign_detached(
@@ -426,7 +437,7 @@ valid = crypto_sign_verify_detached(
 ```
 1. Client sends: {username, password, public_key}
 2. Server stores a placeholder password hash (demo)
-4. Server signs user's public_key
+4. Server signs the user's encryption public_key
 5. Server returns: {user_id, server_signature}
 ```
 
@@ -708,7 +719,7 @@ Implementations MUST:
 - Implement E2EE with NaCl box semantics
 - Use Ed25519 for signatures
 - Use strict TLS certificate validation in alpha and production deployments
-- Validate key attestations (server-signed user key bindings)
+- Validate key attestations (server-signed user-encryption-key bindings)
 - Implement rate limiting (required for alpha and production)
 - Support gRPC and Protocol Buffers
 

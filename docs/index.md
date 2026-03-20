@@ -27,7 +27,7 @@ hero: true
   </div>
   <div class="card">
     <p class="cardTitle">Spam-resistant</p>
-    <p class="cardText">First-time senders land in Requests. One explicit accept moves the conversation to Inbox.</p>
+    <p class="cardText">First-time senders land in Requests. Accept moves the conversation to Inbox, and Reject blocks future delivery.</p>
   </div>
   <div class="card">
     <p class="cardTitle">Federated and self-hostable</p>
@@ -41,7 +41,7 @@ MailX is intentionally boring in the best way: it focuses on the everyday experi
 
 <div class="panel">
   <p class="cardTitle">A simple flow</p>
-  <p class="cardText">New sender -> Requests. One explicit accept -> Inbox. Messages stay end-to-end encrypted.</p>
+  <p class="cardText">New sender -> Requests. Accept -> Inbox. Reject -> blocked. Messages stay end-to-end encrypted.</p>
   <pre><code class="language-text">alice&gt; send bob@bob.local "Hello" "Want to try MailX?"
 bob&gt; list requests
 bob&gt; accept alice@alice.local

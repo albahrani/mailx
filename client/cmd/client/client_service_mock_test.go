@@ -15,6 +15,7 @@ type mockClientService struct {
 	getMessage    func(context.Context, *pb.GetMessageRequest, ...grpc.CallOption) (*pb.GetMessageResponse, error)
 	getContactKey func(context.Context, *pb.GetContactKeyRequest, ...grpc.CallOption) (*pb.GetContactKeyResponse, error)
 	acceptContact func(context.Context, *pb.AcceptContactRequest, ...grpc.CallOption) (*pb.AcceptContactResponse, error)
+	rejectContact func(context.Context, *pb.RejectContactRequest, ...grpc.CallOption) (*pb.RejectContactResponse, error)
 }
 
 func (m *mockClientService) Register(ctx context.Context, in *pb.RegisterRequest, opts ...grpc.CallOption) (*pb.RegisterResponse, error) {
@@ -64,4 +65,11 @@ func (m *mockClientService) AcceptContact(ctx context.Context, in *pb.AcceptCont
 		return nil, nil
 	}
 	return m.acceptContact(ctx, in, opts...)
+}
+
+func (m *mockClientService) RejectContact(ctx context.Context, in *pb.RejectContactRequest, opts ...grpc.CallOption) (*pb.RejectContactResponse, error) {
+	if m.rejectContact == nil {
+		return nil, nil
+	}
+	return m.rejectContact(ctx, in, opts...)
 }

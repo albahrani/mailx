@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -56,6 +57,8 @@ type Server struct {
 	pb.UnimplementedClientServiceServer
 	pb.UnimplementedFederationServiceServer
 }
+
+var errSenderBlocked = errors.New("sender blocked")
 
 func (s *Server) discoverServer(ctx context.Context, domain string) (*federation.ServerInfo, error) {
 	if s.discoveryOverride != nil {
@@ -294,18 +297,26 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 func (s *Server) deliverLocal(username, sender string, encryptedMessage []byte, metadata *pb.MessageMetadata) error {
 	recipient, err := s.storage.GetUser(username, s.config.Domain)
 	if err != nil {
-		return fmt.Errorf("recipient not found")
+		return fmt.Errorf("failed to get recipient: %w", err)
 	}
 
 	contact, err := s.storage.GetContact(recipient.ID, sender)
-	folder := "inbox"
-	if contact == nil || contact.TrustLevel == "unknown" {
-		folder = "requests"
-		if contact == nil {
-			_ = s.storage.UpsertContact(&storage.Contact{UserID: recipient.ID, Address: sender, TrustLevel: "unknown", FirstSeen: time.Now()})
-		}
+	if err != nil {
+		return fmt.Errorf("failed to get contact: %w", err)
 	}
-	_ = err
+
+	folder := "inbox"
+	switch {
+	case contact == nil:
+		folder = "requests"
+		if err := s.storage.UpsertContact(&storage.Contact{UserID: recipient.ID, Address: sender, TrustLevel: "unknown", FirstSeen: time.Now()}); err != nil {
+			return fmt.Errorf("failed to create contact: %w", err)
+		}
+	case contact.TrustLevel == "unknown":
+		folder = "requests"
+	case contact.TrustLevel == "blocked":
+		return errSenderBlocked
+	}
 
 	msg := &storage.Message{
 		ID:              uuid.New().String(),
@@ -491,10 +502,36 @@ func (s *Server) DeliverMessage(ctx context.Context, req *pb.DeliverMessageReque
 
 	metadata := &pb.MessageMetadata{Timestamp: req.Metadata.Timestamp, Size: req.Metadata.Size, Subject: req.Metadata.Subject}
 	if err := s.deliverLocal(username, req.Sender, req.EncryptedMessage, metadata); err != nil {
-		return &pb.DeliverMessageResponse{Status: pb.DeliverMessageResponse_REJECTED_NO_SUCH_USER, ErrorMessage: err.Error()}, nil
+		status := pb.DeliverMessageResponse_REJECTED_NO_SUCH_USER
+		if errors.Is(err, errSenderBlocked) {
+			status = pb.DeliverMessageResponse_REJECTED_BLOCKED
+		}
+		return &pb.DeliverMessageResponse{Status: status, ErrorMessage: err.Error()}, nil
 	}
 
 	return &pb.DeliverMessageResponse{Status: pb.DeliverMessageResponse_ACCEPTED, MessageId: uuid.New().String(), Timestamp: time.Now().Unix()}, nil
+}
+
+// RejectContact declines a first-contact request and blocks future delivery.
+func (s *Server) RejectContact(ctx context.Context, req *pb.RejectContactRequest) (*pb.RejectContactResponse, error) {
+	userID, err := s.validateToken(req.AccessToken)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+	if strings.TrimSpace(req.Address) == "" {
+		return nil, status.Error(codes.InvalidArgument, "address required")
+	}
+	if _, _, err := federation.ParseAddress(req.Address); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid address")
+	}
+
+	if err := s.storage.UpsertContact(&storage.Contact{UserID: userID, Address: req.Address, TrustLevel: "blocked", FirstSeen: time.Now()}); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to reject contact: %v", err)
+	}
+	if err := s.storage.DeleteMessages(userID, req.Address, "requests"); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to clear rejected requests: %v", err)
+	}
+	return &pb.RejectContactResponse{Message: "contact rejected"}, nil
 }
 
 func (s *Server) validateToken(token string) (string, error) {

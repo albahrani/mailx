@@ -207,3 +207,67 @@ func TestMessages_ListAndMove(t *testing.T) {
 		t.Fatalf("unexpected inbox counts: total=%d len=%d", total2, len(msgs2))
 	}
 }
+
+func TestMessages_DeleteBySenderAndFolder(t *testing.T) {
+	s := newTestStorage(t)
+
+	if err := s.CreateUser(&User{
+		ID:              "u1",
+		Username:        "alice",
+		Domain:          "example.test",
+		PasswordHash:    "hash",
+		PublicKey:       []byte{1},
+		ServerSignature: []byte{2},
+		CreatedAt:       time.Unix(1700000000, 0).UTC(),
+		QuotaBytes:      1,
+	}); err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	if err := s.CreateMessage(&Message{
+		ID:              "m1",
+		RecipientUserID: "u1",
+		SenderAddress:   "bob@remote.test",
+		EncryptedBlob:   []byte("blob1"),
+		Subject:         "sub1",
+		Timestamp:       time.Unix(1700000002, 0).UTC(),
+		Size:            5,
+		Read:            false,
+		Folder:          "requests",
+	}); err != nil {
+		t.Fatalf("CreateMessage(requests): %v", err)
+	}
+	if err := s.CreateMessage(&Message{
+		ID:              "m2",
+		RecipientUserID: "u1",
+		SenderAddress:   "bob@remote.test",
+		EncryptedBlob:   []byte("blob2"),
+		Subject:         "sub2",
+		Timestamp:       time.Unix(1700000003, 0).UTC(),
+		Size:            5,
+		Read:            false,
+		Folder:          "inbox",
+	}); err != nil {
+		t.Fatalf("CreateMessage(inbox): %v", err)
+	}
+
+	if err := s.DeleteMessages("u1", "bob@remote.test", "requests"); err != nil {
+		t.Fatalf("DeleteMessages: %v", err)
+	}
+
+	requests, totalRequests, err := s.ListMessages("u1", "requests", 10, 0)
+	if err != nil {
+		t.Fatalf("ListMessages(requests): %v", err)
+	}
+	if totalRequests != 0 || len(requests) != 0 {
+		t.Fatalf("expected requests to be empty, got %d/%d", totalRequests, len(requests))
+	}
+
+	inbox, totalInbox, err := s.ListMessages("u1", "inbox", 10, 0)
+	if err != nil {
+		t.Fatalf("ListMessages(inbox): %v", err)
+	}
+	if totalInbox != 1 || len(inbox) != 1 {
+		t.Fatalf("expected inbox message to remain, got %d/%d", totalInbox, len(inbox))
+	}
+}

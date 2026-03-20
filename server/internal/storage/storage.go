@@ -291,3 +291,16 @@ func (s *Storage) MoveMessages(userID, sender, fromFolder, toFolder string) erro
 	}
 	return nil
 }
+
+// DeleteMessages removes all messages for a user+sender in a folder.
+func (s *Storage) DeleteMessages(userID, sender, folder string) error {
+	query := `
+		DELETE FROM messages
+		WHERE recipient_user_id = ? AND sender_address = ? AND folder = ?
+	`
+	_, err := s.db.Exec(query, userID, sender, folder)
+	if err != nil {
+		return fmt.Errorf("failed to delete messages: %w", err)
+	}
+	return nil
+}

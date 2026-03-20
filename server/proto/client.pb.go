@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.33.4
-// source: client.proto
+// source: proto/client.proto
 
 package proto
 
@@ -54,11 +54,11 @@ func (x DeliveryStatus_Status) String() string {
 }
 
 func (DeliveryStatus_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_client_proto_enumTypes[0].Descriptor()
+	return file_proto_client_proto_enumTypes[0].Descriptor()
 }
 
 func (DeliveryStatus_Status) Type() protoreflect.EnumType {
-	return &file_client_proto_enumTypes[0]
+	return &file_proto_client_proto_enumTypes[0]
 }
 
 func (x DeliveryStatus_Status) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x DeliveryStatus_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DeliveryStatus_Status.Descriptor instead.
 func (DeliveryStatus_Status) EnumDescriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{6, 0}
+	return file_proto_client_proto_rawDescGZIP(), []int{6, 0}
 }
 
 type RegisterRequest struct {
@@ -81,7 +81,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_proto_client_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +93,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_proto_client_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +106,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{0}
+	return file_proto_client_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RegisterRequest) GetUsername() string {
@@ -141,7 +141,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_proto_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -153,7 +153,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_proto_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,7 +166,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{1}
+	return file_proto_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RegisterResponse) GetUserId() string {
@@ -200,7 +200,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_client_proto_msgTypes[2]
+	mi := &file_proto_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +212,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[2]
+	mi := &file_proto_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +225,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{2}
+	return file_proto_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LoginRequest) GetUsername() string {
@@ -253,7 +253,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_client_proto_msgTypes[3]
+	mi := &file_proto_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -265,7 +265,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[3]
+	mi := &file_proto_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -278,7 +278,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{3}
+	return file_proto_client_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *LoginResponse) GetAccessToken() string {
@@ -314,7 +314,7 @@ type SendMessageRequest struct {
 
 func (x *SendMessageRequest) Reset() {
 	*x = SendMessageRequest{}
-	mi := &file_client_proto_msgTypes[4]
+	mi := &file_proto_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -326,7 +326,7 @@ func (x *SendMessageRequest) String() string {
 func (*SendMessageRequest) ProtoMessage() {}
 
 func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[4]
+	mi := &file_proto_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,7 +339,7 @@ func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessageRequest.ProtoReflect.Descriptor instead.
 func (*SendMessageRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{4}
+	return file_proto_client_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SendMessageRequest) GetAccessToken() string {
@@ -381,7 +381,7 @@ type SendMessageResponse struct {
 
 func (x *SendMessageResponse) Reset() {
 	*x = SendMessageResponse{}
-	mi := &file_client_proto_msgTypes[5]
+	mi := &file_proto_client_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +393,7 @@ func (x *SendMessageResponse) String() string {
 func (*SendMessageResponse) ProtoMessage() {}
 
 func (x *SendMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[5]
+	mi := &file_proto_client_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +406,7 @@ func (x *SendMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessageResponse.ProtoReflect.Descriptor instead.
 func (*SendMessageResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{5}
+	return file_proto_client_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SendMessageResponse) GetMessageId() string {
@@ -441,7 +441,7 @@ type DeliveryStatus struct {
 
 func (x *DeliveryStatus) Reset() {
 	*x = DeliveryStatus{}
-	mi := &file_client_proto_msgTypes[6]
+	mi := &file_proto_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -453,7 +453,7 @@ func (x *DeliveryStatus) String() string {
 func (*DeliveryStatus) ProtoMessage() {}
 
 func (x *DeliveryStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[6]
+	mi := &file_proto_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -466,7 +466,7 @@ func (x *DeliveryStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliveryStatus.ProtoReflect.Descriptor instead.
 func (*DeliveryStatus) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{6}
+	return file_proto_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DeliveryStatus) GetRecipient() string {
@@ -501,7 +501,7 @@ type MessageMetadata struct {
 
 func (x *MessageMetadata) Reset() {
 	*x = MessageMetadata{}
-	mi := &file_client_proto_msgTypes[7]
+	mi := &file_proto_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -513,7 +513,7 @@ func (x *MessageMetadata) String() string {
 func (*MessageMetadata) ProtoMessage() {}
 
 func (x *MessageMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[7]
+	mi := &file_proto_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -526,7 +526,7 @@ func (x *MessageMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageMetadata.ProtoReflect.Descriptor instead.
 func (*MessageMetadata) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{7}
+	return file_proto_client_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MessageMetadata) GetTimestamp() int64 {
@@ -562,7 +562,7 @@ type ListMessagesRequest struct {
 
 func (x *ListMessagesRequest) Reset() {
 	*x = ListMessagesRequest{}
-	mi := &file_client_proto_msgTypes[8]
+	mi := &file_proto_client_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -574,7 +574,7 @@ func (x *ListMessagesRequest) String() string {
 func (*ListMessagesRequest) ProtoMessage() {}
 
 func (x *ListMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[8]
+	mi := &file_proto_client_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -587,7 +587,7 @@ func (x *ListMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ListMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{8}
+	return file_proto_client_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListMessagesRequest) GetAccessToken() string {
@@ -628,7 +628,7 @@ type ListMessagesResponse struct {
 
 func (x *ListMessagesResponse) Reset() {
 	*x = ListMessagesResponse{}
-	mi := &file_client_proto_msgTypes[9]
+	mi := &file_proto_client_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -640,7 +640,7 @@ func (x *ListMessagesResponse) String() string {
 func (*ListMessagesResponse) ProtoMessage() {}
 
 func (x *ListMessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[9]
+	mi := &file_proto_client_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -653,7 +653,7 @@ func (x *ListMessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesResponse.ProtoReflect.Descriptor instead.
 func (*ListMessagesResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{9}
+	return file_proto_client_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListMessagesResponse) GetMessages() []*MessageSummary {
@@ -684,7 +684,7 @@ type MessageSummary struct {
 
 func (x *MessageSummary) Reset() {
 	*x = MessageSummary{}
-	mi := &file_client_proto_msgTypes[10]
+	mi := &file_proto_client_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -696,7 +696,7 @@ func (x *MessageSummary) String() string {
 func (*MessageSummary) ProtoMessage() {}
 
 func (x *MessageSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[10]
+	mi := &file_proto_client_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -709,7 +709,7 @@ func (x *MessageSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageSummary.ProtoReflect.Descriptor instead.
 func (*MessageSummary) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{10}
+	return file_proto_client_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MessageSummary) GetMessageId() string {
@@ -764,7 +764,7 @@ type GetMessageRequest struct {
 
 func (x *GetMessageRequest) Reset() {
 	*x = GetMessageRequest{}
-	mi := &file_client_proto_msgTypes[11]
+	mi := &file_proto_client_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +776,7 @@ func (x *GetMessageRequest) String() string {
 func (*GetMessageRequest) ProtoMessage() {}
 
 func (x *GetMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[11]
+	mi := &file_proto_client_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +789,7 @@ func (x *GetMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMessageRequest.ProtoReflect.Descriptor instead.
 func (*GetMessageRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{11}
+	return file_proto_client_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetMessageRequest) GetAccessToken() string {
@@ -818,7 +818,7 @@ type GetMessageResponse struct {
 
 func (x *GetMessageResponse) Reset() {
 	*x = GetMessageResponse{}
-	mi := &file_client_proto_msgTypes[12]
+	mi := &file_proto_client_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +830,7 @@ func (x *GetMessageResponse) String() string {
 func (*GetMessageResponse) ProtoMessage() {}
 
 func (x *GetMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[12]
+	mi := &file_proto_client_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +843,7 @@ func (x *GetMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMessageResponse.ProtoReflect.Descriptor instead.
 func (*GetMessageResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{12}
+	return file_proto_client_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetMessageResponse) GetMessageId() string {
@@ -884,7 +884,7 @@ type GetContactKeyRequest struct {
 
 func (x *GetContactKeyRequest) Reset() {
 	*x = GetContactKeyRequest{}
-	mi := &file_client_proto_msgTypes[13]
+	mi := &file_proto_client_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -896,7 +896,7 @@ func (x *GetContactKeyRequest) String() string {
 func (*GetContactKeyRequest) ProtoMessage() {}
 
 func (x *GetContactKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[13]
+	mi := &file_proto_client_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -909,7 +909,7 @@ func (x *GetContactKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetContactKeyRequest.ProtoReflect.Descriptor instead.
 func (*GetContactKeyRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{13}
+	return file_proto_client_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetContactKeyRequest) GetAccessToken() string {
@@ -938,7 +938,7 @@ type GetContactKeyResponse struct {
 
 func (x *GetContactKeyResponse) Reset() {
 	*x = GetContactKeyResponse{}
-	mi := &file_client_proto_msgTypes[14]
+	mi := &file_proto_client_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -950,7 +950,7 @@ func (x *GetContactKeyResponse) String() string {
 func (*GetContactKeyResponse) ProtoMessage() {}
 
 func (x *GetContactKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[14]
+	mi := &file_proto_client_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -963,7 +963,7 @@ func (x *GetContactKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetContactKeyResponse.ProtoReflect.Descriptor instead.
 func (*GetContactKeyResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{14}
+	return file_proto_client_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetContactKeyResponse) GetAddress() string {
@@ -1004,7 +1004,7 @@ type AcceptContactRequest struct {
 
 func (x *AcceptContactRequest) Reset() {
 	*x = AcceptContactRequest{}
-	mi := &file_client_proto_msgTypes[15]
+	mi := &file_proto_client_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1016,7 +1016,7 @@ func (x *AcceptContactRequest) String() string {
 func (*AcceptContactRequest) ProtoMessage() {}
 
 func (x *AcceptContactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[15]
+	mi := &file_proto_client_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1029,7 +1029,7 @@ func (x *AcceptContactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptContactRequest.ProtoReflect.Descriptor instead.
 func (*AcceptContactRequest) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{15}
+	return file_proto_client_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AcceptContactRequest) GetAccessToken() string {
@@ -1055,7 +1055,7 @@ type AcceptContactResponse struct {
 
 func (x *AcceptContactResponse) Reset() {
 	*x = AcceptContactResponse{}
-	mi := &file_client_proto_msgTypes[16]
+	mi := &file_proto_client_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1067,7 +1067,7 @@ func (x *AcceptContactResponse) String() string {
 func (*AcceptContactResponse) ProtoMessage() {}
 
 func (x *AcceptContactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[16]
+	mi := &file_proto_client_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1080,7 +1080,7 @@ func (x *AcceptContactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptContactResponse.ProtoReflect.Descriptor instead.
 func (*AcceptContactResponse) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{16}
+	return file_proto_client_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AcceptContactResponse) GetMessage() string {
@@ -1090,11 +1090,107 @@ func (x *AcceptContactResponse) GetMessage() string {
 	return ""
 }
 
-var File_client_proto protoreflect.FileDescriptor
+type RejectContactRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_client_proto_rawDesc = "" +
+func (x *RejectContactRequest) Reset() {
+	*x = RejectContactRequest{}
+	mi := &file_proto_client_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectContactRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectContactRequest) ProtoMessage() {}
+
+func (x *RejectContactRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectContactRequest.ProtoReflect.Descriptor instead.
+func (*RejectContactRequest) Descriptor() ([]byte, []int) {
+	return file_proto_client_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RejectContactRequest) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RejectContactRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+type RejectContactResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectContactResponse) Reset() {
+	*x = RejectContactResponse{}
+	mi := &file_proto_client_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectContactResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectContactResponse) ProtoMessage() {}
+
+func (x *RejectContactResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_client_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectContactResponse.ProtoReflect.Descriptor instead.
+func (*RejectContactResponse) Descriptor() ([]byte, []int) {
+	return file_proto_client_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RejectContactResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+var File_proto_client_proto protoreflect.FileDescriptor
+
+const file_proto_client_proto_rawDesc = "" +
 	"\n" +
-	"\fclient.proto\x12\x0fmailx.client.v1\"h\n" +
+	"\x12proto/client.proto\x12\x0fmailx.client.v1\"h\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1d\n" +
@@ -1178,7 +1274,12 @@ const file_client_proto_rawDesc = "" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\"1\n" +
 	"\x15AcceptContactResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2\xf6\x04\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"S\n" +
+	"\x14RejectContactRequest\x12!\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12\x18\n" +
+	"\aaddress\x18\x02 \x01(\tR\aaddress\"1\n" +
+	"\x15RejectContactResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xd6\x05\n" +
 	"\rClientService\x12O\n" +
 	"\bRegister\x12 .mailx.client.v1.RegisterRequest\x1a!.mailx.client.v1.RegisterResponse\x12F\n" +
 	"\x05Login\x12\x1d.mailx.client.v1.LoginRequest\x1a\x1e.mailx.client.v1.LoginResponse\x12X\n" +
@@ -1187,23 +1288,24 @@ const file_client_proto_rawDesc = "" +
 	"\n" +
 	"GetMessage\x12\".mailx.client.v1.GetMessageRequest\x1a#.mailx.client.v1.GetMessageResponse\x12^\n" +
 	"\rGetContactKey\x12%.mailx.client.v1.GetContactKeyRequest\x1a&.mailx.client.v1.GetContactKeyResponse\x12^\n" +
-	"\rAcceptContact\x12%.mailx.client.v1.AcceptContactRequest\x1a&.mailx.client.v1.AcceptContactResponseB/Z-github.com/albahrani/mailx/server/proto;protob\x06proto3"
+	"\rAcceptContact\x12%.mailx.client.v1.AcceptContactRequest\x1a&.mailx.client.v1.AcceptContactResponse\x12^\n" +
+	"\rRejectContact\x12%.mailx.client.v1.RejectContactRequest\x1a&.mailx.client.v1.RejectContactResponseB/Z-github.com/albahrani/mailx/server/proto;protob\x06proto3"
 
 var (
-	file_client_proto_rawDescOnce sync.Once
-	file_client_proto_rawDescData []byte
+	file_proto_client_proto_rawDescOnce sync.Once
+	file_proto_client_proto_rawDescData []byte
 )
 
-func file_client_proto_rawDescGZIP() []byte {
-	file_client_proto_rawDescOnce.Do(func() {
-		file_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_client_proto_rawDesc), len(file_client_proto_rawDesc)))
+func file_proto_client_proto_rawDescGZIP() []byte {
+	file_proto_client_proto_rawDescOnce.Do(func() {
+		file_proto_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_client_proto_rawDesc), len(file_proto_client_proto_rawDesc)))
 	})
-	return file_client_proto_rawDescData
+	return file_proto_client_proto_rawDescData
 }
 
-var file_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_client_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
-var file_client_proto_goTypes = []any{
+var file_proto_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_client_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_proto_client_proto_goTypes = []any{
 	(DeliveryStatus_Status)(0),    // 0: mailx.client.v1.DeliveryStatus.Status
 	(*RegisterRequest)(nil),       // 1: mailx.client.v1.RegisterRequest
 	(*RegisterResponse)(nil),      // 2: mailx.client.v1.RegisterResponse
@@ -1222,8 +1324,10 @@ var file_client_proto_goTypes = []any{
 	(*GetContactKeyResponse)(nil), // 15: mailx.client.v1.GetContactKeyResponse
 	(*AcceptContactRequest)(nil),  // 16: mailx.client.v1.AcceptContactRequest
 	(*AcceptContactResponse)(nil), // 17: mailx.client.v1.AcceptContactResponse
+	(*RejectContactRequest)(nil),  // 18: mailx.client.v1.RejectContactRequest
+	(*RejectContactResponse)(nil), // 19: mailx.client.v1.RejectContactResponse
 }
-var file_client_proto_depIdxs = []int32{
+var file_proto_client_proto_depIdxs = []int32{
 	8,  // 0: mailx.client.v1.SendMessageRequest.metadata:type_name -> mailx.client.v1.MessageMetadata
 	7,  // 1: mailx.client.v1.SendMessageResponse.delivery_statuses:type_name -> mailx.client.v1.DeliveryStatus
 	0,  // 2: mailx.client.v1.DeliveryStatus.status:type_name -> mailx.client.v1.DeliveryStatus.Status
@@ -1236,41 +1340,43 @@ var file_client_proto_depIdxs = []int32{
 	12, // 9: mailx.client.v1.ClientService.GetMessage:input_type -> mailx.client.v1.GetMessageRequest
 	14, // 10: mailx.client.v1.ClientService.GetContactKey:input_type -> mailx.client.v1.GetContactKeyRequest
 	16, // 11: mailx.client.v1.ClientService.AcceptContact:input_type -> mailx.client.v1.AcceptContactRequest
-	2,  // 12: mailx.client.v1.ClientService.Register:output_type -> mailx.client.v1.RegisterResponse
-	4,  // 13: mailx.client.v1.ClientService.Login:output_type -> mailx.client.v1.LoginResponse
-	6,  // 14: mailx.client.v1.ClientService.SendMessage:output_type -> mailx.client.v1.SendMessageResponse
-	10, // 15: mailx.client.v1.ClientService.ListMessages:output_type -> mailx.client.v1.ListMessagesResponse
-	13, // 16: mailx.client.v1.ClientService.GetMessage:output_type -> mailx.client.v1.GetMessageResponse
-	15, // 17: mailx.client.v1.ClientService.GetContactKey:output_type -> mailx.client.v1.GetContactKeyResponse
-	17, // 18: mailx.client.v1.ClientService.AcceptContact:output_type -> mailx.client.v1.AcceptContactResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
+	18, // 12: mailx.client.v1.ClientService.RejectContact:input_type -> mailx.client.v1.RejectContactRequest
+	2,  // 13: mailx.client.v1.ClientService.Register:output_type -> mailx.client.v1.RegisterResponse
+	4,  // 14: mailx.client.v1.ClientService.Login:output_type -> mailx.client.v1.LoginResponse
+	6,  // 15: mailx.client.v1.ClientService.SendMessage:output_type -> mailx.client.v1.SendMessageResponse
+	10, // 16: mailx.client.v1.ClientService.ListMessages:output_type -> mailx.client.v1.ListMessagesResponse
+	13, // 17: mailx.client.v1.ClientService.GetMessage:output_type -> mailx.client.v1.GetMessageResponse
+	15, // 18: mailx.client.v1.ClientService.GetContactKey:output_type -> mailx.client.v1.GetContactKeyResponse
+	17, // 19: mailx.client.v1.ClientService.AcceptContact:output_type -> mailx.client.v1.AcceptContactResponse
+	19, // 20: mailx.client.v1.ClientService.RejectContact:output_type -> mailx.client.v1.RejectContactResponse
+	13, // [13:21] is the sub-list for method output_type
+	5,  // [5:13] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
 }
 
-func init() { file_client_proto_init() }
-func file_client_proto_init() {
-	if File_client_proto != nil {
+func init() { file_proto_client_proto_init() }
+func file_proto_client_proto_init() {
+	if File_proto_client_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_client_proto_rawDesc), len(file_client_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_client_proto_rawDesc), len(file_proto_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_client_proto_goTypes,
-		DependencyIndexes: file_client_proto_depIdxs,
-		EnumInfos:         file_client_proto_enumTypes,
-		MessageInfos:      file_client_proto_msgTypes,
+		GoTypes:           file_proto_client_proto_goTypes,
+		DependencyIndexes: file_proto_client_proto_depIdxs,
+		EnumInfos:         file_proto_client_proto_enumTypes,
+		MessageInfos:      file_proto_client_proto_msgTypes,
 	}.Build()
-	File_client_proto = out.File
-	file_client_proto_goTypes = nil
-	file_client_proto_depIdxs = nil
+	File_proto_client_proto = out.File
+	file_proto_client_proto_goTypes = nil
+	file_proto_client_proto_depIdxs = nil
 }
