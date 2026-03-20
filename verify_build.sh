@@ -90,8 +90,6 @@ rm -f /tmp/verify-test* 2>/dev/null || true
 echo ""
 echo "6. Checking documentation..."
 DOCS=(
-    "$ROOT/docs/PRD_Server.md"
-    "$ROOT/docs/PRD_Client.md"
     "$ROOT/docs/Architecture.md"
     "$ROOT/docs/ThreatModel.md"
     "$ROOT/docs/Protocol.md"

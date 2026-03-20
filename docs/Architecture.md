@@ -41,9 +41,9 @@ MailX is a federated, end-to-end encrypted messaging system designed to replace 
    - Contact management
 
 3. **Key Directory**: Distributed key discovery
-   - DNS-based server discovery
-   - Server-attested user keys
-   - Optional key transparency log (future)
+    - DNS-based server discovery
+    - Server-attested user keys
+    - Basic key transparency log (alpha; gossip later)
 
 ## 2. Identity Model
 
@@ -51,12 +51,14 @@ MailX is a federated, end-to-end encrypted messaging system designed to replace 
 
 Each MailX deployment is anchored to a DNS domain. The domain owner controls the root identity for all users under that domain.
 
+The server signing key published by the domain is the primary trust anchor for federation and user-key attestations.
+
 **Identity Hierarchy:**
 ```
 DNS Domain (example.com)
     └─ Server Signing Key (Ed25519)
         └─ User Encryption Keys (NaCl box / X25519)
-            └─ Device Keys (future)
+            └─ Device Keys (per device)
 ```
 
 ### 2.2 Domain Keys
@@ -172,13 +174,14 @@ Transport security for federation is currently:
 - gRPC with TLS when servers are configured with `tlsCertFile`/`tlsKeyFile`
 - certificate verification may be skipped in demo to support self-signed certs
 
-**Certificate Requirements:**
-This section describes a planned production-grade design.
+Alpha transport requirements:
+- Strict certificate verification for discovery and federation
+- mTLS remains a later hardening step, not a bootstrap dependency
 
 **Connection Establishment:**
 ```
 1. Server A initiates TLS connection to Server B
-2. (Planned) Servers authenticate each other via mTLS and/or an explicit peer auth protocol
+2. Servers authenticate each other via strict certificate validation and the domain signing key trust anchor
 3. Establish encrypted channel
 ```
 
@@ -301,9 +304,9 @@ Payload (before encryption) {
 5. Display message to user
 ```
 
-### 4.3 Multi-Recipient Messages
+### 4.3 Multi-Recipient Fan-Out
 
-For messages to multiple recipients (Cc, Bcc):
+For email-style fan-out to multiple recipients (Cc, Bcc), each recipient is handled independently. There is no persistent group object or shared group key:
 
 **Hybrid Encryption:**
 ```
@@ -403,7 +406,7 @@ Implement Double Ratchet algorithm (Signal Protocol):
    - Can perform timing correlation attacks
    - Cannot decrypt TLS traffic (forward secrecy)
    - Cannot modify messages (authenticated encryption)
-   - Mitigations: TLS (when enabled), planned peer auth hardening, rate limiting
+   - Mitigations: Strict TLS verification, domain signing key trust anchor, rate limiting
 
 3. **Compromised Server**
    - Can access stored encrypted messages
@@ -444,8 +447,8 @@ Implement Double Ratchet algorithm (Signal Protocol):
 
 | Attack | Impact | Mitigation |
 |--------|--------|------------|
-| Server key substitution | Impersonation | Key transparency log, client verification |
-| MITM on federation | Message interception | TLS (when enabled) + planned peer auth; demo skips cert verification |
+| Server key substitution | Impersonation | Domain signing key attestations, basic key transparency, client verification |
+| MITM on federation | Message interception | Strict TLS verification + domain signing key trust anchor; demo may skip verification |
 | Message replay | Duplicate delivery | Nonce-based deduplication, timestamps |
 | Spam/DoS | Resource exhaustion | Rate limiting, first-contact protocol, quotas |
 | Metadata leakage | Traffic analysis | TLS everywhere, timing obfuscation (future) |
@@ -668,19 +671,18 @@ See section 4.2 for encryption details.
 
 ### 12.1 Short-Term (Months)
 
-- Key transparency log with gossip protocol
+- Basic key transparency log
 - Subject line encryption (move to body)
-- Read receipts and typing indicators (optional)
-- Group messaging with shared keys
+- Read receipts (optional)
 - Mobile clients (iOS, Android)
 
 ### 12.2 Medium-Term (Year)
 
 - Onion routing for metadata privacy
 - Private Information Retrieval for key lookup
-- Web client with WASM crypto
+- Key transparency gossip protocol
+- Web client with WASM crypto (later, after native/mobile)
 - Large file attachments (chunked upload/download)
-- Voice and video calls (WebRTC)
 
 ### 12.3 Long-Term (Multi-Year)
 

@@ -16,7 +16,7 @@ hero: true
   <div class="actions">
     <a class="btn btnPrimary" href="https://github.com/albahrani/mailx">View on GitHub</a>
     <a class="btn" href="overview/">Read the overview</a>
-    <a class="btn" href="try/">Try the demo</a>
+    <a class="btn" href="https://github.com/albahrani/mailx/blob/main/demo/README.md">Try the demo</a>
   </div>
 </div>
 
@@ -51,9 +51,9 @@ bob&gt; list inbox</code></pre>
 ## Start Here
 
 - Overview (non-technical): [Overview](overview/)
-- Try the demo: [Try](try/)
 - Quick start: [QUICKSTART.md](https://github.com/albahrani/mailx/blob/main/QUICKSTART.md)
 - Demo walkthrough: [demo/README.md](https://github.com/albahrani/mailx/blob/main/demo/README.md)
+- Umbrella PRD: [GitHub issue #2](https://github.com/albahrani/mailx/issues/2)
 
 ## Deep Dives
 

@@ -142,8 +142,6 @@ try {
 Write-Host
 Write-Step "6. Checking documentation..."
 $docs = @(
-  (Join-Path $Root (Join-Path 'docs' 'PRD_Server.md')),
-  (Join-Path $Root (Join-Path 'docs' 'PRD_Client.md')),
   (Join-Path $Root (Join-Path 'docs' 'Architecture.md')),
   (Join-Path $Root (Join-Path 'docs' 'ThreatModel.md')),
   (Join-Path $Root (Join-Path 'docs' 'Protocol.md')),

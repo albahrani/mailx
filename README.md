@@ -55,6 +55,7 @@ Next: `demo/README.md`
 
 ## Learn More (Without The Wall Of Text)
 
+- Umbrella PRD: [GitHub issue #2](https://github.com/albahrani/mailx/issues/2)
 - Big picture: `docs/overview.md`
 - Architecture: `docs/Architecture.md`
 - Protocol: `docs/Protocol.md`

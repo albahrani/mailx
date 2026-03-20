@@ -234,7 +234,7 @@ This document analyzes the security threats facing the MailX system and describe
 - Configuration errors
 
 **Mitigations:**
-- Strong authentication (planned: proper password hashing and rate limiting)
+- Strong authentication (planned for alpha: proper password hashing, device-based login, and rate limiting)
 - Parameterized queries (ORM)
 - Rate limiting and quotas
 - Principle of least privilege
@@ -257,7 +257,7 @@ This document analyzes the security threats facing the MailX system and describe
 - Verify domain keys against DNS+HTTPS
 - Certificate pinning
 - DNSSEC (where available)
-- Key transparency (future)
+- Key transparency log (alpha)
 
 ### 4.4 Cryptographic Attack Surface
 
@@ -336,9 +336,9 @@ This document analyzes the security threats facing the MailX system and describe
 **Impact:** High - impersonation attack
 **Mitigations:**
 - ✅ End-to-end encryption (confidentiality)
-- ⚠️ Sender-signed message envelopes are not implemented yet
-- ⚠️ Rely on transport security and server-side controls for now
-**Residual Risk:** Medium - message authenticity/integrity against a malicious sender is not fully covered without sender signatures
+- ⚠️ Sender-signed message envelopes are planned for alpha, not yet in the demo
+- ⚠️ Rely on transport security and server-side controls until then
+**Residual Risk:** Medium - message authenticity/integrity against a malicious sender is not fully covered until sender signatures ship
 
 #### T7: Replay Attacks
 **Threat:** Attacker re-sends old message
@@ -355,7 +355,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker floods server with requests
 **Impact:** High - service unavailable
 **Mitigations:**
-- ⚠️ Rate limiting per IP, per domain, per user (planned; not enforced in demo)
+- ⚠️ Rate limiting per IP, per domain, per user (mandatory in alpha; not enforced in demo)
 - ✅ Connection limits
 - ✅ Request timeouts
 - ✅ Resource quotas
@@ -386,7 +386,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Impact:** High - account takeover
 **Mitigations:**
 - ⚠️ Password hashing is a placeholder in the demo implementation
-- ⚠️ Rate limiting on login attempts (planned; not enforced in demo)
+- ⚠️ Rate limiting on login attempts (mandatory in alpha; not enforced in demo)
 - ✅ Account lockout after failures
 - ✅ Optional 2FA (TOTP)
 **Residual Risk:** Low - strong password required
@@ -406,9 +406,9 @@ This document analyzes the security threats facing the MailX system and describe
 **Impact:** Critical - MITM attack
 **Mitigations:**
 - ✅ Domain signing keys published via well-known (`signKey`) for verifying key attestations
-- ⚠️ Demo federation does not implement mTLS or strict certificate verification
-- 🔮 Future: Key transparency log
-**Residual Risk:** Medium - DNS compromise possible
+- ⚠️ Alpha federation requires strict certificate verification
+- 🔮 Basic key transparency log (alpha) with gossip later
+**Residual Risk:** Medium - DNS compromise still matters, but wrong-key attacks are much harder
 
 ### 5.5 Privacy Threats
 
@@ -446,9 +446,9 @@ This document analyzes the security threats facing the MailX system and describe
 **Impact:** Critical - MITM at E2EE layer
 **Mitigations:**
 - ✅ Server signs user keys (attestation)
-- 🔮 Key transparency log (future) detects changes
+- 🔮 Basic key transparency log (alpha) detects changes; gossip later tightens detection
 - ✅ Out-of-band key verification for sensitive contacts
-**Residual Risk:** Medium - mitigated but not eliminated until key transparency deployed
+**Residual Risk:** Medium - mitigated but not eliminated until transparency is fully deployed
 
 #### T18: Sybil Attack
 **Threat:** Attacker creates many fake identities
@@ -465,7 +465,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Mitigations:**
 - ⚠️ Current crypto not post-quantum safe
 - 🔮 Future: Post-quantum algorithms when mature
-- ✅ Forward secrecy (future) limits exposure
+- ✅ Forward secrecy (beta) limits exposure
 **Residual Risk:** High - long-term concern
 
 #### T20: Supply Chain Attack
@@ -550,13 +550,13 @@ This document analyzes the security threats facing the MailX system and describe
 ### 7.1 MUST Have (Critical)
 
 - ✅ End-to-end encryption for all messages
-- ⚠️ Digital signatures on all messages (planned; not implemented in current reference implementation)
+- ⚠️ Digital signatures on all messages (planned for alpha; not implemented in current reference implementation)
 - ✅ Authenticated encryption (no plaintext mode)
 - ✅ TLS 1.3 for all network communication
-- ⚠️ Federation transport security (TLS optional in demo; mTLS planned)
+- ⚠️ Federation transport security (strict TLS verification in alpha; mTLS later)
 - ✅ Secure key storage on client
 - ⚠️ Strong password hashing (planned; demo uses a placeholder)
-- ⚠️ Rate limiting and DoS protection (planned; not enforced in demo)
+- ⚠️ Rate limiting and DoS protection (mandatory in alpha; not enforced in demo)
 - ✅ Input validation and sanitization
 
 ### 7.2 SHOULD Have (Important)
@@ -565,9 +565,9 @@ This document analyzes the security threats facing the MailX system and describe
 - ✅ Multi-device synchronization
 - ✅ Encryption at rest on server
 - ✅ Security event logging
-- ⏳ Key transparency log (future)
-- ⏳ Forward secrecy (future)
-- ⏳ Subject line encryption (future)
+- ⏳ Key transparency log (alpha)
+- ⏳ Forward secrecy (beta)
+- ⏳ Subject line encryption (beta)
 
 ### 7.3 COULD Have (Nice-to-Have)
 
@@ -682,19 +682,22 @@ This document analyzes the security threats facing the MailX system and describe
 ### 10.1 Phase 1: Demo v0.1 (Current)
 - ✅ Basic E2EE with NaCl box
 - ✅ TLS for client-server
-- ⚠️ Federation uses gRPC with optional TLS in demo (no mTLS)
-- ✅ Password authentication
-- ⚠️ Rate limiting (planned; not enforced in demo)
+- ⚠️ Federation uses gRPC with optional TLS in demo (alpha requires strict certificate verification; no mTLS yet)
+- ✅ Password authentication (fallback; device-key/passkey is the primary path)
+- ⚠️ Rate limiting (mandatory in alpha; not enforced in demo)
 
 ### 10.2 Phase 2: Alpha
-- Key transparency log (basic)
-- Forward secrecy (Double Ratchet)
-- Subject encryption
+- Basic key transparency log
+- Sender-signed message envelopes
+- Strict TLS verification for discovery and federation
+- Device-scoped auth and revocation
 - Security audit (internal)
 - Penetration testing
 
 ### 10.3 Phase 3: Beta
 - Key transparency gossip protocol
+- Forward secrecy (Double Ratchet)
+- Subject encryption
 - Advanced traffic analysis resistance
 - External security audit
 - Bug bounty program
@@ -720,8 +723,8 @@ The MailX threat model identifies significant security challenges in building a 
 
 1. **End-to-end encryption** prevents content access by servers and network attackers
 2. **Digital signatures** prevent message forgery and impersonation
-3. **Federation transport security** is planned to use mTLS; demo does not implement mTLS
-4. **Key transparency** (future) detects key substitution attacks
+3. **Federation transport security** requires strict TLS verification in alpha; mTLS comes later
+4. **Key transparency** (alpha basic log, beta gossip) detects key substitution attacks
 5. **Rate limiting and quotas** mitigate abuse and DoS
 
 **Key Residual Risks:**

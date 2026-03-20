@@ -32,7 +32,7 @@ MailX is a federated messaging protocol designed to replace email with better se
 
 **Protocol:** gRPC over TLS (recommended for production)  
 **Port:** 8443 (default, configurable)  
-**TLS Requirements (Production):**
+**TLS Requirements (Alpha and Production):**
 - Use TLS with normal certificate verification (CA or pinning)
 
 **Demo Behavior:**
@@ -44,7 +44,7 @@ MailX is a federated messaging protocol designed to replace email with better se
 **Port:** 8443 (default, configurable)  
 The demo implementation does not establish mutual TLS.
 
-Production-grade federation authentication/authorization is still evolving; treat mTLS requirements as planned unless explicitly marked implemented.
+Alpha and production federation require strict TLS certificate verification. mTLS remains a later hardening step, not a bootstrap dependency.
 
 ### 3.3 Discovery Endpoints
 
@@ -72,7 +72,7 @@ Content-Type: application/json
 
 Notes:
 - `signKey` is required for verifying server signatures on user key attestations.
-- In the demo, the well-known endpoint is served over plain HTTP.
+- In the demo, the well-known endpoint is served over plain HTTP; alpha should use HTTPS.
 
 ## 4. Data Formats
 
@@ -158,7 +158,7 @@ message LoginResponse {
 
 message SendMessageRequest {
   string access_token = 1;
-  repeated string recipients = 2;  // ["bob@example.com"]
+  repeated string recipients = 2;  // One or more recipients; email-style fan-out
   bytes encrypted_message = 3;     // Encrypted message blob
   MessageMetadata metadata = 4;
 }
@@ -320,7 +320,7 @@ message GetUserKeyResponse {
 }
 ```
 
-Note: Sender-signed message envelopes are not implemented in the current reference implementation.
+Note: Sender-signed message envelopes are not implemented in the current reference implementation, but they are planned for alpha.
 
 ### 6.2 Plaintext Payload (Before Encryption)
 
@@ -619,7 +619,7 @@ Graceful degradation if feature unavailable
 
 - ✅ E2EE using NaCl box (`x/crypto/nacl/box`)
 - ✅ Server-signed key attestations verified by clients (Ed25519)
-- ⚠️ Transport security varies by deployment (demo uses self-signed TLS for gRPC when configured; well-known is plain HTTP)
+- ⚠️ Transport security varies by deployment (demo uses self-signed TLS for gRPC when configured; alpha requires strict certificate verification; well-known is plain HTTP in demo)
 - ⚠️ Password hashing is a placeholder
 - ⚠️ Access tokens are not JWT
 - ⚠️ Rate limiting is not enforced
@@ -707,9 +707,9 @@ Implementations MUST:
 - Support protocol version 1.0
 - Implement E2EE with NaCl box semantics
 - Use Ed25519 for signatures
-- Use TLS in production deployments
+- Use strict TLS certificate validation in alpha and production deployments
 - Validate key attestations (server-signed user key bindings)
-- Implement rate limiting (recommended for production)
+- Implement rate limiting (required for alpha and production)
 - Support gRPC and Protocol Buffers
 
 ### 14.2 SHOULD Requirements
@@ -725,7 +725,7 @@ Implementations SHOULD:
 
 Implementations MAY:
 - Support additional encryption algorithms
-- Implement key transparency
+- Implement key transparency (basic log required for alpha profiles; gossip later)
 - Add custom metadata fields
 - Extend protocol with optional features
 
