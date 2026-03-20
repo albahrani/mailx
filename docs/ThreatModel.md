@@ -127,7 +127,7 @@ This document analyzes the security threats facing the MailX system and describe
 
 **Limitations:**
 - Cannot decrypt E2EE message content
-- Cannot forge user signatures (without user key)
+- Cannot forge user signatures (without user encryption key)
 - Key substitution detectable via key transparency
 
 **Mitigations:**
@@ -168,7 +168,7 @@ This document analyzes the security threats facing the MailX system and describe
 
 **Mitigations:**
 - First-contact protocol (spam filtering)
-- Rate limiting per user
+- Rate limiting per account
 - Resource quotas
 - Block lists and abuse reporting
 
@@ -355,7 +355,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker floods server with requests
 **Impact:** High - service unavailable
 **Mitigations:**
-- ⚠️ Rate limiting per IP, per domain, per user (mandatory in alpha; not enforced in demo)
+- ⚠️ Rate limiting per IP, per domain, per account (mandatory in alpha; not enforced in demo)
 - ✅ Connection limits
 - ✅ Request timeouts
 - ✅ Resource quotas
@@ -365,7 +365,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Attacker fills disk with spam messages
 **Impact:** Medium - service degraded
 **Mitigations:**
-- ✅ Per-user storage quotas
+- ✅ Per-account storage quotas
 - ✅ Message size limits
 - ✅ First-contact protocol (spam filter)
 **Residual Risk:** Low - quotas prevent exhaustion
@@ -405,7 +405,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Rogue server pretends to be legitimate domain
 **Impact:** Critical - MITM attack
 **Mitigations:**
-- ✅ Domain signing keys published via well-known (`signKey`) for verifying key attestations
+- ✅ Domain signing key published via well-known (`signKey`) for verifying user-encryption-key attestations
 - ⚠️ Alpha federation requires strict certificate verification
 - 🔮 Basic key transparency log (alpha) with gossip later
 **Residual Risk:** Medium - DNS compromise still matters, but wrong-key attacks are much harder
@@ -445,7 +445,7 @@ This document analyzes the security threats facing the MailX system and describe
 **Threat:** Server substitutes user's public key
 **Impact:** Critical - MITM at E2EE layer
 **Mitigations:**
-- ✅ Server signs user keys (attestation)
+- ✅ Server signs user encryption keys (attestation)
 - 🔮 Basic key transparency log (alpha) detects changes; gossip later tightens detection
 - ✅ Out-of-band key verification for sensitive contacts
 **Residual Risk:** Medium - mitigated but not eliminated until transparency is fully deployed

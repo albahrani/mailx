@@ -166,7 +166,7 @@ curl http://localhost:8080/.well-known/mailx-server | jq
 
 All messages are encrypted client-side using NaCl (box / X25519):
 1. Client generates a NaCl box (X25519) key pair on registration
-2. Server signs user's public key (attestation)
+2. Server signs the user's encryption public key (attestation)
 3. Messages encrypted with recipient's public key
 4. Server stores only encrypted blobs
 
@@ -179,11 +179,11 @@ Servers discover each other via:
 
 ### Security Features
 
-- **Identity**: NaCl box (X25519) for user encryption keys; Ed25519 for server signing keys
+- **Identity**: NaCl box (X25519) for user encryption keys; Ed25519 for the domain signing key
 - **Authentication**: Password-based with server attestation
 - **Authorization**: Token-based (demo tokens are not JWT)
 - **Encryption**: NaCl box for E2EE
-- **Signatures**: Server signs user public keys (key attestations)
+- **Signatures**: Server signs user encryption public keys (key attestations)
 - **First Contact**: Unknown senders go to "requests" folder
 
 ## Testing Scenarios
@@ -298,7 +298,7 @@ Server configurations in `config/`:
 
 Default settings:
 - Max message size: 25 MB
-- Default quota: 10 GB per user
+- Default quota: 10 GB per account
 - gRPC uses TLS in the demo (self-signed); HTTP well-known is plain HTTP
 
 ## Network Architecture

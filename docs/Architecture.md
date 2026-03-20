@@ -49,9 +49,9 @@ MailX is a federated, end-to-end encrypted messaging system designed to replace 
 
 ### 2.1 Domain as Root of Trust
 
-Each MailX deployment is anchored to a DNS domain. The domain owner controls the root identity for all users under that domain.
+Each MailX deployment is anchored to a DNS domain. The domain owner controls the root identity for all accounts under that domain.
 
-The server signing key published by the domain is the primary trust anchor for federation and user-key attestations.
+The domain signing key published by the domain is the primary trust anchor for federation and user-encryption-key attestations.
 
 **Identity Hierarchy:**
 ```
@@ -64,9 +64,9 @@ DNS Domain (example.com)
 ### 2.2 Domain Keys
 
 **Generation:**
-- Server generates an Ed25519 signing key pair on first initialization
+- The server generates an Ed25519 domain signing key pair on first initialization
 - Private key stored encrypted at rest
-- Signing public key published via DNS and HTTPS
+- Domain signing public key published via DNS and HTTPS
 
 **Publication:**
 ```
@@ -93,14 +93,14 @@ Note: In the demo, `/.well-known/mailx-server` is served over plain HTTP; produc
 
 ### 2.3 Server Attestation
 
-When a user registers, the server attests to their public key:
+When an account registers, the server attests to its user encryption key:
 
 **Attestation Structure:**
 ```
 UserIdentity {
     username: "alice"
     domain: "example.com"
-    publicKey: <user-x25519-public-key>
+    publicKey: <user-encryption-public-key>
     serverSignature: <signature over (username || domain || publicKey)>
     createdAt: timestamp
 }
@@ -115,10 +115,10 @@ UserIdentity {
 ### 2.4 User Keys
 
 **Key Management:**
-- Each user generates a NaCl box (X25519) key pair on account creation
+- Each account generates a NaCl box (X25519) user encryption key pair on account creation
 - Private key stored in client device (never shared)
 - Public key registered with server
-- Server signs public key to create binding
+- Server signs the user encryption public key to create binding
 
 **Key Rotation:**
 - User generates new key pair
@@ -129,7 +129,7 @@ UserIdentity {
 
 ### 2.5 Device Keys (Multi-Device)
 
-For multi-device support, each device has its own key pair:
+For multi-device support, each device has its own device key pair, distinct from the account's user encryption key pair:
 
 **Device Key Structure:**
 ```
@@ -220,8 +220,8 @@ message DeliverMessageRequest {
 ```
 1. Client encrypts message with recipient's public key
 2. Client sends to local server via Client API
-3. Server A validates user authentication
-4. (Planned) Server A signs encrypted blob with domain key
+3. Server A validates account authentication
+4. (Planned) Server A signs encrypted blob with domain signing key
 5. Server A discovers Server B via DNS
 6. Server A establishes a gRPC connection to Server B (TLS optional in demo)
 7. Server A calls DeliverMessage RPC

@@ -181,8 +181,8 @@ Get message-id from the list command.
 
 ### Identity
 
-- Each user has a NaCl box (X25519) encryption key pair
-- Server attests user encryption public keys using an Ed25519 signing key (published as `signKey` via well-known)
+- Each account has a NaCl box (X25519) user encryption key pair
+- Server attests user encryption public keys using the domain signing key (published as `signKey` via well-known)
 - Trust on first use (TOFU) for contacts
 
 ### First Contact
